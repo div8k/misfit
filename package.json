@@ -11,7 +11,9 @@
     "lint": "oxlint",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "validate:content": "node scripts/validate-content.ts"
+    "validate:content": "node scripts/validate-content.ts",
+    "count:pool": "node scripts/count-pool.ts",
+    "test:e2e:build": "E2E_TARGET=build playwright test"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

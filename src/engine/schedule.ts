@@ -1,7 +1,7 @@
-import { largestDim, requiredExtent } from './geometry.ts';
+import { formatMm, largestDim, measured, measureWord, requiredExtent } from './geometry.ts';
 import { SCORING_VERSION } from './scoring.ts';
 import type { DailyManifest, GameObject, Issue, ResolvedScene, Scene } from './types.ts';
-import { hasErrors, isDateKey, validateManifest, validateScene } from './validate.ts';
+import { hasErrors, isDateKey, validateManifest, validateObject, validateScene } from './validate.ts';
 
 export interface Catalog {
   objects: Record<string, GameObject>;
@@ -76,7 +76,8 @@ function shuffle<T>(items: T[], rand: () => number): T[] {
   return a;
 }
 
-export function resolveScene(scene: Scene, objects: Record<string, GameObject>, refSuffix = ''): ResolvedScene | null {
+export function resolveScene(scene: Scene | undefined, objects: Record<string, GameObject>, refSuffix = ''): ResolvedScene | null {
+  if (!scene) return null;
   const objs = scene.objectIds.map((id) => objects[id]);
   if (objs.some((o) => !o)) return null;
   return {
@@ -93,71 +94,100 @@ export function resolveScene(scene: Scene, objects: Record<string, GameObject>, 
   };
 }
 
-const REMIX_DISTORTIONS = [0.62, 0.7, 0.78, 1.3, 1.42, 1.55];
+/** Distortions the generator may apply: all clearly wrong, all fixable well inside the slider. */
+export const GEN_DISTORTIONS = [0.6, 0.66, 0.72, 0.78, 1.28, 1.36, 1.45, 1.55];
+/** Generated rounds keep true sizes within 3:1 and never shrink the whole exhibit too far. */
+const GEN_MAX_RATIO = 3;
+const GEN_MAX_EXTENT = 2.4;
+export const SEED_RE = /^[a-z0-9]{1,16}$/;
+/** Reserved seed: the five hand-made demonstration scenes, in their edited order. */
+export const DEMO_SEED = 'demo';
 
 /**
- * Development preview only: re-uses a demo fixture with a different, seeded
- * misfit and distortion so repeat playtests are not identical. This is fixture
- * repetition, not fresh hand-edited content, and it can never be published.
+ * Build one generated round, or null if this combination is not a fair, legible scene.
+ * Only catalogue objects and their documented sizes are used: nothing is invented.
  */
-export function remixScene(scene: Scene, objects: Record<string, GameObject>, seed: string): Scene {
-  const rand = rng(`${seed}:${scene.id}`);
-  const objs = scene.objectIds.map((id) => objects[id]).filter(Boolean);
-  if (objs.length !== 4) return scene;
-  const biggest = Math.max(...objs.map(largestDim));
-  const options = shuffle(
-    scene.objectIds.flatMap((id) => REMIX_DISTORTIONS.map((d) => ({ id, d }))),
-    rand,
-  );
-  for (const { id, d } of options) {
-    const need = requiredExtent(objs, id, d);
-    if (need > biggest * 2.4) continue; // would make the whole exhibit tiny
-    const pct = Math.round(d * 100);
-    const candidate: Scene = {
-      ...scene,
-      misfitId: id,
-      distortion: d,
-      layout: { extentMm: Math.ceil(need) },
-      explanation: `In this preview remix the ${objects[id].noun} was drawn at ${pct}% of its real size.`,
-    };
-    if (!hasErrors(validateScene(candidate, objects))) return candidate;
-  }
-  return scene;
+export function buildRound(c: Catalog, ids: string[], misfitId: string, distortion: number, n = 1): Scene | null {
+  const objs = ids.map((id) => c.objects[id]);
+  if (objs.length !== 4 || objs.some((o) => !o)) return null;
+  const dims = objs.map(largestDim);
+  const biggest = Math.max(...dims);
+  if (biggest / Math.min(...dims) > GEN_MAX_RATIO) return null;
+  const need = requiredExtent(objs, misfitId, distortion);
+  if (!(need <= biggest * GEN_MAX_EXTENT)) return null;
+  const m = c.objects[misfitId];
+  if (!m) return null;
+  const scene: Scene = {
+    id: `gen:${ids.join('+')}:${misfitId}:${distortion}`,
+    version: 1,
+    title: `Exhibit ${n}`,
+    objectIds: ids as Scene['objectIds'],
+    misfitId,
+    distortion,
+    layout: { extentMm: Math.ceil(need) },
+    difficulty: Math.abs(Math.log(distortion)) > Math.log(1.4) ? 'easy' : 'medium',
+    explanation: `The ${m.noun} was drawn at ${Math.round(distortion * 100)}% of its real size. A real one is ${formatMm(measured(m))} ${measureWord(m)}.`,
+  };
+  return hasErrors(validateScene(scene, c.objects)) ? null : scene;
 }
 
-export function previewManifest(c: Catalog, date: string): DailyManifest {
-  const order = shuffle(c.demoSceneIds, rng(`order:${date}`)).slice(0, 5);
-  return {
-    date,
-    version: 1,
-    scenes: order.map((id) => ({ id, version: c.scenes[id]?.version ?? 0 })),
-    scoringVersion: SCORING_VERSION,
-    status: 'demo',
-    generated: true,
-  };
+/**
+ * Five generated rounds from a seed. The same key gives the same game on every
+ * device, which is what lets a friend link reproduce a player's exact rounds.
+ */
+export function generateGame(c: Catalog, key: string): Scene[] | null {
+  const rand = rng(key);
+  const ids = Object.keys(c.objects).sort();
+  const rounds: Scene[] = [];
+  const usedMisfits = new Set<string>();
+  const uses = new Map<string, number>();
+  for (let attempt = 0; attempt < 600 && rounds.length < 5; attempt++) {
+    const quad = shuffle(ids, rand).slice(0, 4);
+    if (quad.length < 4 || quad.some((id) => (uses.get(id) ?? 0) >= 2)) continue;
+    const options = shuffle(
+      quad.filter((id) => !usedMisfits.has(id)).flatMap((id) => GEN_DISTORTIONS.map((d) => ({ id, d }))),
+      rand,
+    );
+    for (const { id, d } of options) {
+      const scene = buildRound(c, quad, id, d, rounds.length + 1);
+      if (!scene) continue;
+      rounds.push(scene);
+      usedMisfits.add(id);
+      for (const q of quad) uses.set(q, (uses.get(q) ?? 0) + 1);
+      break;
+    }
+  }
+  return rounds.length === 5 ? rounds : null;
 }
 
 export type Daily =
-  | { ok: true; manifest: DailyManifest; scenes: ResolvedScene[]; puzzleKey: string }
-  | { ok: false; reason: 'invalid-date' | 'not-published' | 'invalid-content'; issues: Issue[] };
+  | { ok: true; seed: string; generated: boolean; scenes: ResolvedScene[]; puzzleKey: string }
+  | { ok: false; reason: 'invalid-date' | 'invalid-seed' | 'not-published' | 'invalid-content'; issues: Issue[] };
 
-/** The same date always yields the same scenes, order and distortions, on every device. */
-export function getDaily(c: Catalog, date: string, today: string): Daily {
+/**
+ * A day's game for one seed. Each player gets their own random seed per day;
+ * the same date + seed always yields the same scenes, order and distortions.
+ */
+export function getDaily(c: Catalog, date: string, today: string, seed: string = DEMO_SEED): Daily {
   if (!isDateKey(date)) return { ok: false, reason: 'invalid-date', issues: [] };
+  if (typeof seed !== 'string' || !SEED_RE.test(seed)) return { ok: false, reason: 'invalid-seed', issues: [] };
   if (date < c.epoch || date > today) return { ok: false, reason: 'not-published', issues: [] };
-  const authored = c.manifests.find((m) => m.date === date);
-  const manifest = authored ?? previewManifest(c, date);
-  const issues = validateManifest(manifest, c.scenes, c.objects);
-  if (hasErrors(issues)) return { ok: false, reason: 'invalid-content', issues };
-  const scenes: ResolvedScene[] = [];
-  for (const r of manifest.scenes) {
-    const base = c.scenes[r.id];
-    const scene = manifest.generated ? remixScene(base, c.objects, date) : base;
-    const resolved = resolveScene(scene, c.objects, manifest.generated ? `~${date}` : '');
-    if (!resolved) return { ok: false, reason: 'invalid-content', issues };
-    scenes.push(resolved);
+  const puzzleKey = `${date}:g${seed}:s${SCORING_VERSION}`;
+  if (seed === DEMO_SEED) {
+    const manifest = c.manifests[0];
+    const issues = manifest ? validateManifest(manifest, c.scenes, c.objects) : [];
+    if (!manifest || hasErrors(issues)) return { ok: false, reason: 'invalid-content', issues };
+    const scenes = manifest.scenes.map((r) => resolveScene(c.scenes[r.id], c.objects));
+    if (scenes.some((s) => !s)) return { ok: false, reason: 'invalid-content', issues };
+    return { ok: true, seed, generated: false, scenes: scenes as ResolvedScene[], puzzleKey };
   }
-  return { ok: true, manifest, scenes, puzzleKey: `${date}:m${manifest.version}:s${manifest.scoringVersion}` };
+  const objectIssues = Object.values(c.objects).flatMap(validateObject);
+  if (hasErrors(objectIssues)) return { ok: false, reason: 'invalid-content', issues: objectIssues };
+  const game = generateGame(c, `${date}:${seed}`);
+  if (!game) return { ok: false, reason: 'invalid-content', issues: [] };
+  const scenes = game.map((s) => resolveScene(s, c.objects));
+  if (scenes.some((s) => !s)) return { ok: false, reason: 'invalid-content', issues: [] };
+  return { ok: true, seed, generated: true, scenes: scenes as ResolvedScene[], puzzleKey };
 }
 
 export function getPractice(c: Catalog): { ok: true; scenes: ResolvedScene[]; puzzleKey: string } | { ok: false; issues: Issue[] } {

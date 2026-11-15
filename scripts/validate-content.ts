@@ -12,18 +12,18 @@ for (const o of Object.values(CATALOG.objects)) issues.push(...validateObject(o)
 for (const s of Object.values(CATALOG.scenes)) issues.push(...validateScene(s, CATALOG.objects).filter((i) => !i.code.startsWith('object.')));
 for (const m of CATALOG.manifests) issues.push(...validateManifest(m, CATALOG.scenes, CATALOG.objects, asPublic ? 'public' : m.status).filter((i) => i.code.startsWith('manifest.')));
 
-// The seeded preview schedule must resolve for the next 60 days.
+// Generated games must resolve for a spread of dates and seeds.
 let previewFailures = 0;
 for (let i = 0; i < 60; i++) {
   const date = addDays(CATALOG.epoch, i);
-  if (!getDaily(CATALOG, date, date).ok) previewFailures++;
+  for (const seed of ['a', 'b7', `s${i}`]) if (!getDaily(CATALOG, date, date, seed).ok) previewFailures++;
 }
 
 const objects = Object.values(CATALOG.objects);
 const unverified = objects.filter((o) => o.status !== 'verified').length;
 console.log(`Objects: ${objects.length} (${unverified} unverified)`);
 console.log(`Scenes: ${Object.keys(CATALOG.scenes).length} · hand-edited manifests: ${CATALOG.manifests.length}`);
-console.log(`Preview schedule: ${60 - previewFailures}/60 days resolve`);
+console.log(`Generated games: ${180 - previewFailures}/180 date+seed combinations resolve`);
 console.log(`Mode: ${asPublic ? 'PUBLIC launch check' : 'demo'}`);
 for (const i of issues) console.log(`  ${i.level.toUpperCase()} [${i.code}] ${i.ref}: ${i.message}`);
 

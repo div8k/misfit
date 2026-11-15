@@ -9,12 +9,13 @@ export type Action =
   | { type: 'lock' }
   | { type: 'next' };
 
-export function newRun(o: { mode: Mode; variant: Variant; date: string; puzzleKey: string; sceneRefs: string[] }): RunState {
+export function newRun(o: { mode: Mode; variant: Variant; date: string; seed?: string; puzzleKey: string; sceneRefs: string[] }): RunState {
   return {
     v: 1,
     mode: o.mode,
     variant: o.variant,
     date: o.date,
+    seed: o.seed ?? '',
     puzzleKey: o.puzzleKey,
     sceneRefs: o.sceneRefs,
     round: 0,

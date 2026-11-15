@@ -2,7 +2,7 @@
 
 **Four objects. One wrong size. Find it. Fix it.**
 
-A mobile-first daily browser game. Each of five rounds shows four objects drawn at one shared physical scale. Three are true to size; one has been enlarged or shrunk. Pick the suspect, then resize the real misfit, then watch the true size slide in over your dashed estimate. Score out of 500, with a spoiler-free result to share.
+A mobile-first daily browser game. Every player gets their own randomly drawn game each day, from a pool of 12,769 possible rounds. Each of five rounds shows four objects drawn at one shared physical scale. Three are true to size; one has been enlarged or shrunk. Pick the suspect, then resize the real misfit, then watch the true size slide in over your dashed estimate. Score out of 500, with a spoiler-free result to share.
 
 "MISFIT" is a working title, not a cleared brand. This is a **prototype**: the source is public, but the game is not deployed anywhere, no analytics leave the device, and there are no accounts, ads or payments.
 
@@ -22,14 +22,17 @@ Then open the printed local URL. Other commands:
 | `npm run build` | Type-check and build to `dist/` |
 | `npm test` | Unit tests for the game engine (Vitest) |
 | `npm run test:e2e` | Browser tests (Playwright; first run `npx playwright install chromium`) |
+| `npm run test:e2e:build` | The same browser tests against the production build, with its security policy |
 | `npm run validate:content` | Content validator; add `-- --public` for the launch check |
+| `npm run count:pool` | Counts every distinct valid round the generator can produce |
 | `npm run typecheck` | TypeScript only |
 
 Useful URLs while developing:
 
 - `/?gallery` — fixture gallery: every scene at its shared scale, validator output, and a slider to scrub each misfit across the whole range.
 - `/?playtest` — adds the private playtest section to Settings in a production build (always present in `npm run dev`): variant switch and event-log download.
-- `/?d=2026-11-15#s=412` — a friend link: opens that date's exhibit and shows the claimed score, labelled unverified.
+- `/?d=2026-11-15&g=ab12cd#s=412` — a friend link: opens that date's game with the sender's seed, so the friend plays the exact same five rounds, and shows the claimed score, labelled unverified.
+- `/?g=demo` — the five hand-made demonstration scenes instead of a random game (used by the tests).
 
 Set `PUBLIC_SITE_URL` (for example in `.env.local`) to control the URL used in share text. Without it, the current origin is used. No domain is hard-coded.
 
@@ -43,7 +46,7 @@ src/engine/     Pure TypeScript, no React, fully unit-tested
   scoring.ts      points, tolerance, slider maths
   geometry.ts     the shared scale: one mm→px multiplier per scene
   game.ts         state machine (identify → repair → reveal → next/results)
-  schedule.ts     UTC dates, editions, manifests, seeded preview schedule
+  schedule.ts     UTC dates, editions, the seeded random game generator
   storage.ts      versioned localStorage records, corruption handling, streaks
   session.ts      resume logic (an active run keeps its date past midnight)
   share.ts        spoiler-free share text, friend links, score bands
@@ -59,6 +62,36 @@ scripts/        Content validator CLI
 
 **Scoring.** 40 points for spotting the misfit, up to 60 for the repair. With `r = submitted / true` and `e = max(0, |ln r| − ln 1.05)`, repair points are `round(60 · exp(−3e))`. Full credit on the multiplicative interval [1/1.05, 1.05] ("roughly within 5%"). The slider is logarithmic, 0.4×–2.5× of the size first shown, in steps of about 0.5%, and always starts at 1×.
 
+## Random games
+
+When a player starts the day's game, the app draws a random seed (from the browser's cryptographic random source) and saves it with their run. The generator in `src/engine/schedule.ts` turns `date + seed` into five rounds:
+
+- It picks four catalogue objects whose true sizes are within 3:1, chooses one as the misfit, and applies one of eight distortions (60–78% or 128–155% of true size).
+- Every candidate round goes through the same validator as hand-made scenes, so the misfit can always be fixed inside the slider, stays inside its cell, and stays legible at 320 px.
+- Within one game the five misfits are all different, and no object appears more than twice.
+
+`npm run count:pool` enumerates the whole space: **746 fair groups of four objects and 12,769 distinct valid rounds**. A game is five of those, so two players getting the same game by chance is very unlikely (200 consecutive test seeds gave 200 different games).
+
+Two honest caveats. All of that variety comes from the same 19 objects, so players will see the same things in new combinations; more objects are what really adds freshness. And this is a deliberate departure from the original brief, which had everyone play the same five rounds each day: scores are now only directly comparable between a player and the friends who open their challenge link, which carries the seed.
+
+## Security review
+
+Checked on 15 November 2026:
+
+| Area | Finding | Action |
+|---|---|---|
+| Dependencies | `npm audit`: 0 known vulnerabilities (runtime and dev) | None needed |
+| Secrets | No keys, tokens or passwords in the source or git history | `.env*` files added to `.gitignore` |
+| Server | There is none: no backend, accounts, database or network calls | — |
+| Injected SVG artwork | Art strings are inserted as markup. Today they are static and safe, but a careless future content edit could add active content | Validator now rejects scripts, event handlers, links, embeds and `url()` in artwork |
+| Outbound links | Source links open in a new tab | `rel="noreferrer noopener"`; validator requires plain `http(s)` URLs |
+| URL parameters | `d`, `g` and `#s` come from untrusted links | Strict formats only; anything else is ignored. Values are rendered as text, never as markup |
+| Saved data | localStorage can be edited or corrupted | Every field is validated on load (ranges, types, score consistency); tampered or inflated records are refused. Fuzz-tested |
+| Built site | No policy limiting what the page may load | Production builds now ship a Content Security Policy: same-origin scripts, fonts, images and connections only; no plugins, no form posts |
+| Cheating | Scores are computed in the browser, so a determined player can fake one | Accepted for a casual prototype; claimed scores are labelled unverified and there is no leaderboard |
+
+Still to do when it is hosted: `frame-ancestors`, HSTS and `X-Content-Type-Options` can only be sent as HTTP headers, so they belong in the hosting configuration.
+
 ## Validation results
 
 Run on 15 November 2026, macOS, Node 26.13, Chromium (Playwright headless).
@@ -66,19 +99,23 @@ Run on 15 November 2026, macOS, Node 26.13, Chromium (Playwright headless).
 | Check | Result |
 |---|---|
 | `npm run typecheck` | Pass |
-| `npm test` | 34/34 pass |
-| `npm run test:e2e` | 20/20 pass (19 desktop Chromium, 1 touch-emulated phone) |
-| `npm run validate:content` | Pass for demo use; 19 objects, 6 scenes, 60/60 preview days resolve |
+| `npm test` | 40/40 pass, five consecutive runs |
+| `npm run test:e2e` | 29/29 pass, three consecutive runs each (28 desktop Chromium, 1 touch-emulated phone) |
+| `npm run test:e2e:build` | 29/29 pass, two consecutive runs each, against the production build with its security policy |
+| `npm run validate:content` | Pass for demo use; 19 objects, 6 hand-made scenes, 180/180 date+seed combinations generate |
 | `npm run validate:content -- --public` | **Fails, as intended**: 5 scenes rejected for unverified measurements |
-| `npm run build` | Pass. JS 285 kB raw, **89.8 kB gzip** (target < 200 kB); CSS 4.2 kB gzip; fonts 37–41 kB each for the Latin subsets |
+| `npm run build` | Pass. JS 288 kB raw, **90.8 kB gzip** (target < 200 kB); CSS 4.2 kB gzip; fonts 37–41 kB each for the Latin subsets |
+| `npm audit` | 0 vulnerabilities |
+
+The unit tests include fuzzing: 400 games of random and hostile actions (every state must save and reload unchanged, scores must stay in range), about 600 corrupted or tampered save records, and hostile URLs. Browser tests fail on any uncaught error, console error or security-policy violation.
 
 How the brief's ten test areas are covered:
 
 1. Scoring bounds, monotonic decline, reciprocal symmetry, exact full-credit interval — unit tests.
-2. Same date/version → same order and distortion — unit tests (including cloned catalogues and different "today" values).
+2. Same date and seed → same order and distortion — unit tests (cloned catalogues, different "today" values) and a browser test where a friend link reproduces another player's rounds exactly.
 3. No repeat scoring; reload and midnight resume — unit tests on the reducer and storage, plus a browser test that reloads after UTC midnight.
 4. Mouse, keyboard-only and touch (emulated) complete the game; a wrong pick still leads to the repair — browser tests.
-5. Every answer reachable; one shared scale; no per-cell fit — unit tests over 90 days of schedule, plus a browser check of the rendered SVG scale.
+5. Every answer reachable; one shared scale; no per-cell fit — unit tests over 300 generated games, plus browser checks of the rendered SVG scale and of six random games at both slider extremes.
 6. 320, 390, 768, 1440 px wide, and 640×450 (equal to 1280×900 at 200% zoom): no horizontal overflow, 44 px header targets, equal cells ≥ 48 px, 13 px labels, enlarged misfit stays inside its cell — browser tests.
 7. Share text and score card contain no answers; cancelled share sheet and blocked clipboard paths — unit and browser tests. The card is checked to be a 1080×1350 PNG; its contents were inspected by eye.
 8. Invalid content never yields NaN or a false success; unverified content cannot enter a public manifest — unit tests.
@@ -101,7 +138,7 @@ Every measurement is **unverified demo data**. The figures are the commonly publ
 
 Four objects are defined by a permitted range rather than a single number (tennis ball, baseball, basketball, Ultimate disc); the mid-range value is used and the notes say so.
 
-Only 15 November 2026 (edition #1) has a hand-edited manifest. Every other date uses a **seeded preview schedule**: the same five fixtures in a shuffled order, each with a deterministically re-chosen misfit and distortion so repeat playtests are not identical. That is fixture repetition for development, not fresh edited content, and it is flagged `generated` and can never be published.
+The five hand-made scenes are kept as the curated demonstration set (`/?g=demo`) and as fixtures for the tests and gallery. What players actually get each day is a generated game, described under "Random games" above. Generated rounds have a factual, formulaic explanation rather than an edited one, and nobody has reviewed each of the 12,769 combinations by hand.
 
 ### Adding or editing content
 
@@ -115,9 +152,9 @@ Content checklist per scene: Is every object a standard or a named model, not a 
 ## Genuine launch blockers
 
 1. **Measurements are unverified.** All 19 objects need checking against primary manufacturer, standards-body or museum sources, with exact URLs and retrieval dates.
-2. **Content volume.** A public launch needs at least 30 edited daily sets (150 scenes), or a smaller tested schedule with a stated end date. There are 5 scenes today.
+2. **Content variety.** The generator gives 12,769 rounds, but from only 19 objects. A public launch needs a much larger verified catalogue, and ideally edited sets (the brief asked for 30 daily sets, 150 scenes) alongside the generated ones.
 3. **No evidence yet that the game is fun.** Run the comprehension test and the A/B comparison (variant B is built in) before investing further.
-4. **Trusted time.** The daily uses the device clock; a public competition needs server time.
+4. **Trusted time and scores.** The daily uses the device clock and scores are computed in the browser; a public competition needs server time and server-side checking.
 5. **Name and domain.** "MISFIT" has not been checked as a brand or domain.
 6. **Analytics and privacy.** Only a local debug sink exists. Any real collector needs configuration, a privacy policy and a consent review.
 7. **Cross-browser and assistive-technology testing** on real devices.

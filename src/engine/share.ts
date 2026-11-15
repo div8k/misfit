@@ -22,24 +22,29 @@ export function roundPercents(run: RunState): number[] {
   return run.results.map((r) => Math.round((roundPoints(r) / max) * 100));
 }
 
-export function buildChallengeUrl(base: string, date: string, claimedScore?: number): string {
+export function buildChallengeUrl(base: string, date: string, seed: string, claimedScore?: number): string {
   const root = base.replace(/[/?#]+$/, '');
   const frag = typeof claimedScore === 'number' && Number.isFinite(claimedScore) ? `#s=${Math.round(claimedScore)}` : '';
-  return `${root}/?d=${date}${frag}`;
+  return `${root}/?d=${date}&g=${seed}${frag}`;
 }
 
 export interface Challenge {
   date: string | null;
+  /** Seed of the sender's game, so the friend plays the exact same rounds. */
+  seed: string | null;
   /** A friend's claimed score. Client-supplied, so always treated as unverified. */
   claimed: number | null;
 }
 
 export function parseChallenge(search: string, hash: string): Challenge {
-  const d = new URLSearchParams(search).get('d');
+  const q = new URLSearchParams(search);
+  const d = q.get('d');
+  const g = q.get('g');
   const m = /^#s=(\d{1,3})$/.exec(hash);
   const claimed = m ? Number(m[1]) : null;
   return {
     date: isDateKey(d) ? d : null,
+    seed: g !== null && /^[a-z0-9]{1,16}$/.test(g) ? g : null,
     claimed: claimed !== null && claimed >= 0 && claimed <= 500 ? claimed : null,
   };
 }

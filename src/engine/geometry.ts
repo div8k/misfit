@@ -80,3 +80,7 @@ export function formatMm(mm: number): string {
   if (mm < 100) return `${mm.toFixed(1)} mm`;
   return `${(mm / 10).toFixed(1)} cm`;
 }
+
+export function measureWord(o: GameObject): string {
+  return o.measure === 'diameter' ? 'across' : o.measure === 'height' ? 'tall' : 'wide';
+}

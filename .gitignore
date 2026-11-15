@@ -26,3 +26,7 @@ dist-ssr
 e2e/.results
 test-results
 playwright-report
+
+.env
+.env.*
+.claude

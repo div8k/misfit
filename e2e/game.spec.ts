@@ -5,7 +5,23 @@ const DAY1 = new Date('2026-11-15T12:00:00Z');
 const ROUND1 = { misfit: 'SD memory card', other: 'AA battery' };
 const OBJECT_WORDS = ['card', 'battery', 'floppy', 'cassette', 'VHS', 'disc', 'ball', 'bill', 'passport', 'pin', 'LP', ' mm', ' cm'];
 
-async function open(page: Page, at = DAY1, path = '/') {
+// "?g=demo" selects the five hand-made scenes; without it every player gets a random game.
+// "playtest" shows the private playtest tools in production builds too.
+const DEMO = '/?g=demo&playtest';
+
+let pageErrors: string[] = [];
+test.beforeEach(({ page }) => {
+  pageErrors = [];
+  page.on('pageerror', (e) => pageErrors.push(String(e)));
+  page.on('console', (m) => {
+    if (m.type() === 'error') pageErrors.push(m.text());
+  });
+});
+test.afterEach(() => {
+  expect(pageErrors, 'no uncaught errors, console errors or CSP violations').toEqual([]);
+});
+
+async function open(page: Page, at = DAY1, path = DEMO) {
   await page.clock.setFixedTime(at);
   await page.goto(path);
 }
@@ -157,12 +173,12 @@ test('results, spoiler-free copy, replay warning, and no overwrite on replay', a
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   expect(copied.split('\n')[0]).toBe('MISFIT #1');
   expect(copied).toContain('Four objects. One wrong size.');
-  expect(copied).toContain('?d=2026-11-15');
+  expect(copied).toContain('?d=2026-11-15&g=demo');
   for (const w of OBJECT_WORDS) expect(copied).not.toContain(w);
 
   await page.getByRole('button', { name: 'Challenge a friend' }).click();
   const challenge = await page.evaluate(() => navigator.clipboard.readText());
-  expect(challenge).toMatch(/\?d=2026-11-15#s=\d+$/);
+  expect(challenge).toMatch(/\?d=2026-11-15&g=demo#s=\d+$/);
 
   await page.getByRole('button', { name: 'Replay the reveals' }).click();
   await expect(page.getByText("Contains today's answers")).toBeVisible();
@@ -223,7 +239,7 @@ test('share failure paths: cancelled sheet is not a success; blocked clipboard s
 });
 
 test('friend link opens the same date, labels the claim unverified, and rejects junk', async ({ page }) => {
-  await open(page, new Date('2026-11-18T09:00:00Z'), '/?d=2026-11-15#s=412');
+  await open(page, new Date('2026-11-18T09:00:00Z'), '/?d=2026-11-15&g=demo#s=412');
   await expect(page.getByText('They claim 412/500. Claimed scores are unverified.')).toBeVisible();
   await page.getByRole('button', { name: 'Play Misfit #1' }).click();
   await expect(page.getByText('#1 · 15 Nov 2026')).toBeVisible();
@@ -231,7 +247,7 @@ test('friend link opens the same date, labels the claim unverified, and rejects 
 
   // a date with no published exhibit falls back to today
   await page.evaluate(() => localStorage.clear());
-  await open(page, new Date('2026-11-18T09:00:00Z'), '/?d=2031-01-01#s=99999');
+  await open(page, new Date('2026-11-18T09:00:00Z'), '/?d=2031-01-01&g=<script>#s=99999');
   await expect(page.getByRole('button', { name: "Play today's Misfit" })).toBeVisible();
   await expect(page.getByText(/They claim/)).toHaveCount(0);
 });
@@ -391,7 +407,99 @@ async function playRoundWithMouseUntilReveal(page: Page) {
 test('fixture gallery lists every scene with validator output', async ({ page }) => {
   await open(page, DAY1, '/?gallery');
   await expect(page.getByRole('heading', { name: 'Fixture gallery' })).toBeVisible();
-  await expect(page.locator('.gallery-scene')).toHaveCount(6);
+  await expect(page.locator('.gallery-scene')).toHaveCount(11); // 6 hand-made + 5 generated
   await expect(page.getByText(/5 blocking issues/)).toBeVisible();
   await expect(page.locator('.gallery .tone-bad')).toHaveCount(0);
 });
+
+const DAY1_ANSWERS = [
+  { label: 'SD memory card', step: -75 },
+  { label: 'Audio cassette', step: 72 },
+  { label: 'Payment card (ID-1)', step: 72 },
+  { label: 'Basketball (size 7)', step: 50 },
+  { label: 'Golf ball', step: -60 },
+];
+
+test('a perfect game scores 500/500 and each correct fix reads "Right on scale"', async ({ page }) => {
+  await open(page);
+  await page.getByRole('button', { name: "Play today's Misfit" }).click();
+  for (const [i, a] of DAY1_ANSWERS.entries()) {
+    await cell(page, a.label).click();
+    await page.getByRole('button', { name: "That's the misfit" }).click();
+    await expect(page.getByText('Found it. Now fix it.')).toBeVisible();
+    await page.getByRole('slider').fill(String(a.step));
+    await page.getByRole('button', { name: 'Lock it in' }).click();
+    await expect(page.getByText('Right on scale')).toBeVisible();
+    await expect(page.locator('.round-score strong')).toHaveText('100');
+    await page.getByRole('button', { name: i < 4 ? 'Next round' : 'See my score' }).click();
+  }
+  await expect(page.getByText('5/5 spotted · 500/500 points')).toBeVisible();
+  await expect(page.locator('.score-num')).toHaveText('500');
+});
+
+test('scores fall off sensibly: far-off repairs earn little, both directions', async ({ page }) => {
+  await open(page);
+  await page.getByRole('button', { name: "Play today's Misfit" }).click();
+  await cell(page, 'SD memory card').click();
+  await page.getByRole('button', { name: "That's the misfit" }).click();
+  await page.getByRole('slider').fill('184'); // 2.5× of an already 45%-too-big card
+  await page.getByRole('button', { name: 'Lock it in' }).click();
+  await expect(page.getByText(/2\d\d% too big/)).toBeVisible();
+  await expect(page.locator('.round-score strong')).toHaveText('41'); // 40 for spotting it, 1 for the repair
+});
+
+test('each player gets their own random game; a friend link reproduces it exactly', async ({ browser }) => {
+  const games: { seed: string; labels: string[] }[] = [];
+  for (let i = 0; i < 3; i++) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await open(page, DAY1, '/');
+    await page.getByRole('button', { name: "Play today's Misfit" }).click();
+    await expect(page.getByText('Round 1 of 5')).toBeVisible();
+    const seed = await page.evaluate(() => JSON.parse(localStorage.getItem('misfit:v1:run:daily:2026-11-15')!).seed as string);
+    expect(seed).toMatch(/^[a-z0-9]{4,16}$/);
+    games.push({ seed, labels: await page.locator('.label').allTextContents() });
+    await context.close();
+  }
+  expect(new Set(games.map((g) => g.seed)).size).toBe(3);
+
+  const friend = await (await browser.newContext()).newPage();
+  await open(friend, DAY1, `/?d=2026-11-15&g=${games[0].seed}#s=300`);
+  await expect(friend.getByText(/exact same five rounds/)).toBeVisible();
+  await friend.getByRole('button', { name: "Play today's Misfit" }).click();
+  expect(await friend.locator('.label').allTextContents()).toEqual(games[0].labels);
+});
+
+for (const seed of ['r1', 'r2', 'r3', 'r4', 'r5', 'r6']) {
+  test(`random game "${seed}" plays through to a score`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await open(page, DAY1, `/?g=${seed}`);
+    await page.getByRole('button', { name: "Play today's Misfit" }).click();
+    const seen = new Set<string>();
+    for (let i = 0; i < 5; i++) {
+      await expect(page.locator('button.cell')).toHaveCount(4);
+      seen.add((await page.locator('.label').allTextContents()).join('|'));
+      await page.locator('button.cell').nth(i % 4).click();
+      await page.getByRole('button', { name: "That's the misfit" }).click();
+      for (const step of ['-184', '184']) {
+        await page.getByRole('slider').fill(step);
+        const inside = await page.locator('.cell.is-target').evaluate((cellEl) => {
+          const c = cellEl.querySelector('svg')!.getBoundingClientRect();
+          const a = cellEl.querySelector('.art')!.getBoundingClientRect();
+          return Math.max(a.width, a.height) >= 12 && a.left >= c.left - 0.5 && a.right <= c.right + 0.5 && a.top >= c.top - 0.5 && a.bottom <= c.bottom + 0.5;
+        });
+        expect(inside, 'misfit stays visible and inside its cell at both slider ends').toBe(true);
+      }
+      await page.getByRole('slider').fill('0');
+      await page.getByRole('button', { name: 'Lock it in' }).click();
+      await expect(page.locator('.reveal-card')).toBeVisible();
+      await page.getByText('Why this size?').click();
+      await expect(page.locator('details.why')).toContainText('of its real size');
+      await noOverflow(page);
+      await page.getByRole('button', { name: /Next round|See my score/ }).click();
+    }
+    expect(seen.size).toBe(5); // five different exhibits
+    await expect(page.getByRole('heading', { name: 'Your eye for size' })).toBeVisible();
+    await expect(page.getByText(/^\d\/5 spotted · \d{1,3}\/500 points$/)).toBeVisible();
+  });
+}

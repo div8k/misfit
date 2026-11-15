@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 5199;
+// E2E_TARGET=build runs the same tests against the production build
+// (with its Content Security Policy) instead of the dev server.
+const build = process.env.E2E_TARGET === 'build';
+const PORT = build ? 5198 : 5199;
 
 export default defineConfig({
   testDir: './e2e',
@@ -9,9 +12,9 @@ export default defineConfig({
   reporter: 'list',
   use: { baseURL: `http://localhost:${PORT}`, trace: 'off' },
   webServer: {
-    command: `npm run dev -- --port ${PORT} --strictPort`,
+    command: build ? `npm run build && npm run preview -- --port ${PORT} --strictPort` : `npm run dev -- --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] }, grepInvert: /@touch/ },

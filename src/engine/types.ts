@@ -100,7 +100,9 @@ export interface RunState {
   mode: Mode;
   variant: Variant;
   date: string;
-  /** date + manifest version + scoring version the run started with. */
+  /** Seed of this player's game ('' for practice). Friend links carry it. */
+  seed: string;
+  /** date + seed + scoring version the run started with. */
   puzzleKey: string;
   sceneRefs: string[];
   round: number;

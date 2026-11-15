@@ -23,6 +23,10 @@ export function validateObject(o: GameObject): Issue[] {
   if (!o || !text(o.id)) return [{ level: 'error', code: 'object.id', ref: '?', message: 'Object has no id' }];
   if (!text(o.label) || !text(o.noun)) err('object.label', 'Missing label or noun');
   if (!text(o.art) || !/<(path|rect|circle|ellipse|polygon)\b/.test(o.art)) err('object.art', 'Artwork is blank');
+  // Artwork is injected as SVG markup, so it may contain shapes only: no scripts, handlers, links or embeds.
+  if (text(o.art) && /<\s*(script|foreignObject|iframe|image|use|a|style|animate|set)\b|\bon[a-z]+\s*=|javascript:|href\s*=|url\s*\(/i.test(o.art)) {
+    err('object.artUnsafe', 'Artwork may only contain plain shapes');
+  }
   if (!Array.isArray(o.viewBox) || o.viewBox.length !== 4 || !pos(o.viewBox[2]) || !pos(o.viewBox[3])) {
     err('object.viewBox', 'viewBox must have positive width and height');
   }
@@ -43,7 +47,7 @@ export function validateObject(o: GameObject): Issue[] {
   if (!['width', 'height', 'diameter'].includes(o.measure)) err('object.measure', 'Unknown measured dimension');
   if (!text(o.definition)) err('object.definition', 'Missing model/standard definition');
   if (!text(o.sourceTitle) || !text(o.sourceShortName)) err('object.source', 'Missing source title');
-  if (!text(o.sourceUrl) || !/^https?:\/\/[^\s]+\.[^\s]+/.test(o.sourceUrl)) err('object.sourceUrl', 'Missing or invalid source URL');
+  if (!text(o.sourceUrl) || !/^https?:\/\/[^\s"'<>]+\.[^\s"'<>]+$/.test(o.sourceUrl)) err('object.sourceUrl', 'Missing or invalid source URL');
   if (!text(o.artAuthor) || !text(o.artLicense)) err('object.artMeta', 'Missing illustration author or licence');
   if (o.status !== 'verified' && o.status !== 'unverified') err('object.status', 'Unknown verification status');
   if (o.retrieved !== null && !isDateKey(o.retrieved)) err('object.retrieved', 'Retrieved date must be YYYY-MM-DD or null');

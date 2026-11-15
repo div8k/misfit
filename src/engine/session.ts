@@ -4,20 +4,21 @@ import type { Mode, ResolvedScene, RunState } from './types.ts';
 
 export type Session =
   | { status: 'ok'; run: RunState; scenes: ResolvedScene[]; puzzleKey: string; stale: boolean }
-  | { status: 'none'; scenes: ResolvedScene[]; puzzleKey: string }
+  | { status: 'none'; scenes: ResolvedScene[]; puzzleKey: string; seed: string }
   | { status: 'problem' }
   | { status: 'unavailable' };
 
 /** Load the saved run (if any) for a puzzle together with its content. */
-export function loadSession(store: Store, c: Catalog, mode: Mode, date: string, today: string): Session {
-  const content = mode === 'daily' ? getDaily(c, date, today) : getPractice(c);
-  if (!content.ok) return { status: 'unavailable' };
+export function loadSession(store: Store, c: Catalog, mode: Mode, date: string, today: string, seed?: string): Session {
   const loaded = store.loadRun(mode, date);
   if (!loaded.ok) {
     store.discardRun(mode, date);
     return { status: 'problem' };
   }
-  if (!loaded.run) return { status: 'none', scenes: content.scenes, puzzleKey: content.puzzleKey };
+  // A saved run keeps the seed it started with; `seed` only applies to a new run.
+  const content = mode === 'daily' ? getDaily(c, date, today, loaded.run?.seed || seed) : getPractice(c);
+  if (!content.ok) return { status: 'unavailable' };
+  if (!loaded.run) return { status: 'none', scenes: content.scenes, puzzleKey: content.puzzleKey, seed: 'seed' in content ? String(content.seed) : '' };
   const run = loaded.run;
   const matches =
     run.puzzleKey === content.puzzleKey &&

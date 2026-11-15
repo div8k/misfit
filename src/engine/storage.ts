@@ -53,8 +53,10 @@ export function isRunState(x: unknown): x is RunState {
   if (r.v !== 1) return false;
   if (r.mode !== 'daily' && r.mode !== 'practice') return false;
   if (r.variant !== 'A' && r.variant !== 'B') return false;
-  if (!isDateKey(r.date) || typeof r.puzzleKey !== 'string') return false;
-  if (!Array.isArray(r.sceneRefs) || r.sceneRefs.length < 1 || !r.sceneRefs.every((s) => typeof s === 'string')) return false;
+  if (!isDateKey(r.date) || typeof r.puzzleKey !== 'string' || r.puzzleKey.length > 80) return false;
+  if (typeof r.seed !== 'string' || !/^[a-z0-9]{0,16}$/.test(r.seed)) return false;
+  if ((r.mode === 'daily') !== (r.seed !== '')) return false;
+  if (!Array.isArray(r.sceneRefs) || r.sceneRefs.length < 1 || r.sceneRefs.length > 5 || !r.sceneRefs.every((s) => typeof s === 'string')) return false;
   if (!Number.isInteger(r.round) || (r.round as number) < 0 || (r.round as number) >= r.sceneRefs.length) return false;
   if (!['identify', 'repair', 'reveal', 'results'].includes(r.phase as string)) return false;
   if (r.selectedId !== null && typeof r.selectedId !== 'string') return false;
@@ -65,11 +67,24 @@ export function isRunState(x: unknown): x is RunState {
     if (!isNum(q.idPoints) || !isNum(q.repairPoints) || !isNum(q.ratio) || !isNum(q.t) || q.ratio <= 0) return false;
     if (q.idPoints < 0 || q.idPoints > 40 || q.repairPoints < 0 || q.repairPoints > 60) return false;
     if (q.identified !== null && typeof q.identified !== 'boolean') return false;
+    if (q.idPoints !== (q.identified === true ? 40 : 0)) return false;
+    if ((q.identified === null) !== (r.variant === 'B')) return false;
+    if (q.pickedId !== null && typeof q.pickedId !== 'string') return false;
+    if (typeof q.sceneRef !== 'string' || q.t < T_MIN - 1e-9 || q.t > T_MAX + 1e-9) return false;
   }
   const expected = r.phase === 'reveal' || r.phase === 'results' ? (r.round as number) + 1 : (r.round as number);
   if (r.results.length !== expected) return false;
   if (r.completed !== (r.phase === 'results')) return false;
-  if (r.phase === 'repair' && (!r.pending || typeof r.pending !== 'object')) return false;
+  if (r.phase === 'repair' || r.phase === 'reveal') {
+    const p = r.pending as Record<string, unknown> | null;
+    if (!p || typeof p !== 'object') return false;
+    if (p.identified !== null && typeof p.identified !== 'boolean') return false;
+    if (p.idPoints !== (p.identified === true ? 40 : 0)) return false;
+    if (p.pickedId !== null && typeof p.pickedId !== 'string') return false;
+    if ((p.identified === null) !== (r.variant === 'B')) return false;
+  }
+  if (r.phase === 'results' && r.pending !== null) return false;
+  if (r.variant === 'B' && r.phase === 'identify') return false;
   if (r.phase === 'identify' && r.pending) return false;
   return true;
 }

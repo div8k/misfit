@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CATALOG } from '../content/index.ts';
 import { newRun, reduce, type Action } from './game.ts';
 import { ASPECT, cellWidthPx, FIT_H, FIT_W, measured, place, VIEWPORTS } from './geometry.ts';
-import { addDays, editionFor, formatRefreshLocal, getDaily, getPractice, nextRefresh, utcDateKey, type Catalog } from './schedule.ts';
+import { addDays, buildRound, editionFor, formatRefreshLocal, GEN_DISTORTIONS, getDaily, getPractice, nextRefresh, rng, utcDateKey, type Catalog } from './schedule.ts';
 import {
   repairPoints,
   repairPointsForRatio,
@@ -24,15 +24,15 @@ import { hasErrors, validateManifest, validateObject, validateScene } from './va
 
 const TODAY = '2026-11-15';
 
-function daily(date = TODAY, today = date) {
-  const d = getDaily(CATALOG, date, today);
+function daily(date = TODAY, today = date, seed = 'demo') {
+  const d = getDaily(CATALOG, date, today, seed);
   if (!d.ok) throw new Error(`no daily for ${date}`);
   return d;
 }
 
-function start(date = TODAY, variant: 'A' | 'B' = 'A') {
-  const d = daily(date);
-  const run = newRun({ mode: 'daily', variant, date, puzzleKey: d.puzzleKey, sceneRefs: d.scenes.map((s) => s.ref) });
+function start(date = TODAY, variant: 'A' | 'B' = 'A', seed = 'demo') {
+  const d = daily(date, date, seed);
+  const run = newRun({ mode: 'daily', variant, date, seed: d.seed, puzzleKey: d.puzzleKey, sceneRefs: d.scenes.map((s) => s.ref) });
   return { run, scenes: d.scenes };
 }
 
@@ -97,21 +97,49 @@ describe('1. scoring', () => {
 });
 
 describe('2. schedule is deterministic', () => {
-  it('gives the same order and distortion for the same date', () => {
+  it('gives the same order and distortion for the same date and seed', () => {
     for (const date of [TODAY, '2026-11-16', '2026-12-25', '2028-02-29']) {
-      const a = getDaily(CATALOG, date, '2030-01-01');
-      const b = getDaily(structuredClone(CATALOG), date, '2031-06-01');
-      expect(a.ok).toBe(true);
-      expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+      for (const seed of ['demo', 'abc', 'z9k2']) {
+        const a = getDaily(CATALOG, date, '2030-01-01', seed);
+        const b = getDaily(structuredClone(CATALOG), date, '2031-06-01', seed);
+        expect(a.ok).toBe(true);
+        expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+      }
     }
   });
 
-  it('uses the hand-edited manifest on its date and a labelled preview elsewhere', () => {
-    expect(daily(TODAY).manifest.generated).toBe(false);
-    const preview = daily('2026-11-20');
-    expect(preview.manifest.generated).toBe(true);
-    expect(preview.manifest.status).toBe('demo');
-    expect(preview.scenes.every((s) => s.ref.endsWith('~2026-11-20'))).toBe(true);
+  it('gives different players different games, and friends with the same seed the same game', () => {
+    expect(daily(TODAY, TODAY, 'demo').generated).toBe(false);
+    const games = new Set<string>();
+    for (let i = 0; i < 200; i++) {
+      const g = daily(TODAY, TODAY, `p${i}`);
+      expect(g.generated).toBe(true);
+      expect(g.scenes).toHaveLength(5);
+      games.add(g.scenes.map((s) => s.ref).join('|'));
+      // variety inside one game: five different misfits, no object shown more than twice
+      expect(new Set(g.scenes.map((s) => s.misfitId)).size).toBe(5);
+      const uses = new Map<string, number>();
+      for (const s of g.scenes) for (const o of s.objects) uses.set(o.id, (uses.get(o.id) ?? 0) + 1);
+      expect(Math.max(...uses.values())).toBeLessThanOrEqual(2);
+    }
+    expect(games.size).toBe(200);
+    // same seed on a different day is a different game
+    expect(daily('2026-11-16', '2026-11-16', 'p1').scenes.map((s) => s.ref)).not.toEqual(daily(TODAY, TODAY, 'p1').scenes.map((s) => s.ref));
+    for (const bad of ['', 'UPPER', 'a b', '../x', 'a'.repeat(17), '<script>']) {
+      expect(getDaily(CATALOG, TODAY, TODAY, bad)).toMatchObject({ ok: false, reason: 'invalid-seed' });
+    }
+  });
+
+  it('has well over 1,000 distinct valid rounds to draw from', () => {
+    const ids = Object.keys(CATALOG.objects).sort();
+    let rounds = 0;
+    for (let a = 0; a < ids.length; a++)
+      for (let b = a + 1; b < ids.length; b++)
+        for (let c = b + 1; c < ids.length; c++)
+          for (let d = c + 1; d < ids.length; d++)
+            for (const m of [ids[a], ids[b], ids[c], ids[d]])
+              for (const k of GEN_DISTORTIONS) if (buildRound(CATALOG, [ids[a], ids[b], ids[c], ids[d]], m, k)) rounds++;
+    expect(rounds).toBeGreaterThan(1000);
   });
 
   it('refuses dates that are invalid, before the first edition, or not yet published', () => {
@@ -239,12 +267,12 @@ describe('5. fixtures and shared scale', () => {
       expect(repairPointsForRatio(distortion * Math.exp(stepToT(Math.round(t / T_STEP))))).toBe(60);
     };
     for (const s of allScenes) check(s.distortion);
-    for (let i = 0; i < 90; i++) for (const s of daily(addDays(TODAY, i)).scenes) check(s.distortion);
+    for (let i = 0; i < 300; i++) for (const s of daily(TODAY, TODAY, `k${i}`).scenes) check(s.distortion);
   });
 
   it('draws all four objects at one millimetres-to-viewBox scale, with no per-object fitting', () => {
-    for (let i = 0; i < 30; i++) {
-      for (const scene of daily(addDays(TODAY, i)).scenes) {
+    for (let i = 0; i < 100; i++) {
+      for (const scene of daily(TODAY, TODAY, `k${i}`).scenes) {
         for (const o of scene.objects) {
           const p = place(o, scene.extentMm, 1);
           // 1 viewBox unit = 1 mm for every object in the scene
@@ -258,8 +286,8 @@ describe('5. fixtures and shared scale', () => {
   });
 
   it('keeps the resized misfit inside its cell and legible at every supported width', () => {
-    for (let i = 0; i < 90; i++) {
-      for (const scene of daily(addDays(TODAY, i)).scenes) {
+    for (let i = 0; i < 300; i++) {
+      for (const scene of [...daily(TODAY, TODAY, `k${i}`).scenes, ...daily().scenes]) {
         const W = scene.extentMm;
         for (const o of scene.objects) {
           const scales = o.id === scene.misfitId ? [scene.distortion * 0.4, scene.distortion, scene.distortion * 2.5] : [1];
@@ -288,14 +316,14 @@ describe('7. sharing is spoiler-free', () => {
   it('share text has the documented shape and no answers', () => {
     let { run, scenes } = start();
     scenes.forEach((_, i) => (run = playRound(run, scenes, i % 2 ? 'wrong' : 'right', 0.2 * i)));
-    const url = buildChallengeUrl('https://example.test/play/', TODAY, 321);
+    const url = buildChallengeUrl('https://example.test/play/', TODAY, 'demo', 321);
     const text = buildShareText(run, 1, url);
     const lines = text.split('\n');
     expect(lines[0]).toBe('MISFIT #1');
     expect(lines[1]).toMatch(/^\d{1,3}\/500 · \d\/5 spotted$/);
     expect(Array.from(lines[2])).toHaveLength(5);
     expect(lines[3]).toBe('Four objects. One wrong size.');
-    expect(lines[4]).toBe('https://example.test/play/?d=2026-11-15#s=321');
+    expect(lines[4]).toBe('https://example.test/play/?d=2026-11-15&g=demo#s=321');
     const lower = text.toLowerCase();
     for (const o of Object.values(CATALOG.objects)) {
       expect(lower).not.toContain(o.label.toLowerCase());
@@ -309,9 +337,9 @@ describe('7. sharing is spoiler-free', () => {
   it('bands and friend links round-trip', () => {
     expect([100, 90, 89, 70, 69, 40, 39, 0].map(bandIndex)).toEqual([0, 0, 1, 1, 2, 2, 3, 3]);
     expect(BANDS).toHaveLength(4);
-    expect(parseChallenge('?d=2026-11-15', '#s=321')).toEqual({ date: TODAY, claimed: 321 });
-    expect(parseChallenge('?d=2026-13-40', '#s=9999')).toEqual({ date: null, claimed: null });
-    expect(parseChallenge('', '#s=<script>')).toEqual({ date: null, claimed: null });
+    expect(parseChallenge('?d=2026-11-15&g=ab12', '#s=321')).toEqual({ date: TODAY, seed: 'ab12', claimed: 321 });
+    expect(parseChallenge('?d=2026-13-40&g=../../etc', '#s=9999')).toEqual({ date: null, seed: null, claimed: null });
+    expect(parseChallenge('?g=%3Cscript%3E', '#s=<script>')).toEqual({ date: null, seed: null, claimed: null });
   });
 });
 
@@ -354,6 +382,7 @@ describe('8. invalid content and storage problems', () => {
   it('broken content yields an explicit failure, not NaN or a silent success', () => {
     const c = broken({ widthMm: NaN });
     expect(getDaily(c, TODAY, TODAY)).toMatchObject({ ok: false, reason: 'invalid-content' });
+    expect(getDaily(c, TODAY, TODAY, 'abc')).toMatchObject({ ok: false, reason: 'invalid-content' });
     const store = createStore(memoryStorage());
     expect(loadSession(store, c, 'daily', TODAY, TODAY).status).toBe('unavailable');
     // Even if such a scene reached the reducer, it would not award points.
@@ -423,6 +452,131 @@ describe('8. invalid content and storage problems', () => {
     expect(computeStreak(['2026-11-13', '2026-11-14'], TODAY)).toBe(2); // today not played yet
     expect(computeStreak(['2026-11-12', '2026-11-14', TODAY], TODAY)).toBe(2);
     expect(computeStreak(['2028-02-28', '2028-02-29', '2028-03-01'], '2028-03-01')).toBe(3);
+  });
+});
+
+describe('security and robustness fuzzing', () => {
+  it('artwork may only contain plain shapes', () => {
+    const o = CATALOG.objects['cd'];
+    const attacks = [
+      '<circle r="5"/><script>alert(1)</script>',
+      '<circle r="5" onload="alert(1)"/>',
+      '<a href="javascript:alert(1)"><circle r="5"/></a>',
+      '<foreignObject><iframe src="https://evil.example"/></foreignObject><rect/>',
+      '<image href="https://evil.example/x.png"/><rect/>',
+      '<rect style="background:url(https://evil.example)"/>',
+      '<use href="#x"/><rect/>',
+    ];
+    for (const art of attacks) expect(validateObject({ ...o, art }).some((i) => i.code === 'object.artUnsafe')).toBe(true);
+    for (const obj of Object.values(CATALOG.objects)) expect(validateObject(obj)).toEqual([]);
+  });
+
+  it('source links must be plain http(s) URLs', () => {
+    const o = CATALOG.objects['cd'];
+    for (const sourceUrl of ['javascript:alert(1)', 'data:text/html,<script>', '//evil.example', 'https://a.b/"onmouseover="x', 'https://a.b/ x']) {
+      expect(hasErrors(validateObject({ ...o, sourceUrl }))).toBe(true);
+    }
+  });
+
+  it('random action sequences never break the invariants', () => {
+    const rand = rng('fuzz-actions');
+    const pick = <T,>(xs: T[]) => xs[Math.floor(rand() * xs.length)];
+    for (let game = 0; game < 400; game++) {
+      const variant = game % 4 === 0 ? 'B' : 'A';
+      let { run, scenes } = start(TODAY, variant, `f${game}`);
+      const store = createStore(memoryStorage());
+      for (let step = 0; step < 120 && !run.completed; step++) {
+        const scene = scenes[run.round];
+        const action: Action = pick<Action>([
+          { type: 'select', id: pick(scene.objects).id },
+          { type: 'select', id: 'nope' },
+          { type: 'confirm' },
+          { type: 'setT', t: (rand() - 0.5) * 4 },
+          { type: 'setT', t: pick([NaN, Infinity, -Infinity, 1e308]) },
+          { type: 'lock' },
+          { type: 'lock' },
+          { type: 'next' },
+        ]);
+        const before = run;
+        run = reduce(run, action, scenes);
+        expect(run.results.length).toBeGreaterThanOrEqual(before.results.length);
+        expect(run.results.length - before.results.length).toBeLessThanOrEqual(1);
+        expect(run.round).toBeGreaterThanOrEqual(before.round);
+        expect(Number.isFinite(run.t)).toBe(true);
+        expect(run.t).toBeGreaterThanOrEqual(T_MIN);
+        expect(run.t).toBeLessThanOrEqual(T_MAX);
+        // everything the game can produce must survive a save and reload unchanged
+        store.saveRun(run);
+        const back = store.loadRun('daily', TODAY);
+        expect(back.ok && back.run).toEqual(run);
+      }
+      const sum = summarize(run.results, variant, 5);
+      expect(sum.score).toBeGreaterThanOrEqual(0);
+      expect(sum.score).toBeLessThanOrEqual(sum.max);
+      for (const r of run.results) {
+        expect(Number.isFinite(r.ratio) && r.ratio > 0).toBe(true);
+        expect([0, 40]).toContain(r.idPoints);
+        expect(Number.isInteger(r.repairPoints) && r.repairPoints >= 0 && r.repairPoints <= 60).toBe(true);
+      }
+    }
+  });
+
+  it('garbage and tampered saves never throw and never load as a valid run', () => {
+    const rand = rng('fuzz-storage');
+    const backend = memoryStorage();
+    const store = createStore(backend);
+    let { run, scenes } = start();
+    run = playRound(run, scenes, 'right', 0.1);
+    const good = JSON.stringify(run);
+    const key = 'misfit:v1:run:daily:2026-11-15';
+    const junk = ['', 'null', '[]', '{}', '"x"', '123', '{"__proto__":{"v":1}}', '{"v":1}', good.slice(0, 50), good + '}', '\u0000'];
+    for (const raw of junk) {
+      backend.setItem(key, raw);
+      expect(() => store.loadRun('daily', TODAY)).not.toThrow();
+      expect(store.loadRun('daily', TODAY).ok).toBe(false);
+    }
+    // mutate one field at a time to a hostile value
+    const hostile = [null, -1, 1e9, NaN, 'x', '<img src=x onerror=alert(1)>', [], {}, true];
+    const parsed = JSON.parse(good) as Record<string, unknown>;
+    let rejected = 0;
+    for (const field of Object.keys(parsed)) {
+      for (const value of hostile) {
+        const mutated = JSON.stringify({ ...parsed, [field]: value });
+        backend.setItem(key, mutated);
+        const r = store.loadRun('daily', TODAY);
+        if (!r.ok) rejected++;
+        else if (r.run) {
+          // anything accepted must be safe to keep playing and scoring
+          const s = summarize(r.run.results, r.run.variant, r.run.sceneRefs.length);
+          expect(s.score).toBeGreaterThanOrEqual(0);
+          expect(s.score).toBeLessThanOrEqual(500);
+        }
+      }
+    }
+    expect(rejected).toBeGreaterThan(60);
+    // inflated scores are refused
+    for (const patch of [{ idPoints: 400 }, { repairPoints: 61 }, { ratio: -1 }, { idPoints: 40, identified: false }]) {
+      backend.setItem(key, JSON.stringify({ ...parsed, results: [{ ...(parsed.results as object[])[0], ...patch }] }));
+      expect(store.loadRun('daily', TODAY).ok).toBe(false);
+    }
+    // random byte noise
+    for (let i = 0; i < 500; i++) {
+      const cut = Math.floor(rand() * good.length);
+      backend.setItem(key, good.slice(0, cut) + String.fromCharCode(Math.floor(rand() * 128)) + good.slice(cut + 1));
+      expect(() => store.loadRun('daily', TODAY)).not.toThrow();
+    }
+  });
+
+  it('hostile URLs are ignored', () => {
+    const nasty = ['?d=<script>alert(1)</script>', '?d=2026-11-15%0d%0aSet-Cookie:x', '?d=__proto__&g=constructor', '?d=9999-99-99&g=' + 'a'.repeat(5000), '?d[]=1&g[]=2'];
+    for (const q of nasty) {
+      const c = parseChallenge(q, '#s=1e9');
+      expect(c.date).toBeNull();
+      expect(c.claimed).toBeNull();
+      expect(c.seed === null || /^[a-z0-9]{1,16}$/.test(c.seed)).toBe(true);
+    }
+    expect(parseChallenge('?d=2026-11-15', '#s=501').claimed).toBeNull();
+    expect(parseChallenge('?d=2026-11-15', '#s=-5').claimed).toBeNull();
   });
 });
 

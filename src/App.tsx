@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { CATALOG } from './content/index.ts';
 import { createDebugSink, createTracker } from './engine/analytics.ts';
 import { newRun, reduce, type Action } from './engine/game.ts';
-import { editionFor, formatDateLabel, formatRefreshLocal, getDaily, nextRefresh, resolveScene, utcDateKey } from './engine/schedule.ts';
+import { editionFor, formatDateLabel, formatRefreshLocal, getDaily, nextRefresh, resolveScene, SEED_RE, utcDateKey } from './engine/schedule.ts';
 import { roundPoints, summarize } from './engine/scoring.ts';
 import { loadSession, resumeActive } from './engine/session.ts';
 import { BANDS, parseChallenge } from './engine/share.ts';
@@ -67,6 +67,19 @@ function boot(): { session: Sess | null; view: View; notice: string | null } {
 }
 const initial = boot();
 
+/** A fresh random seed: this is what makes each player's game their own. */
+function randomSeed(): string {
+  const buf = new Uint32Array(2);
+  try {
+    crypto.getRandomValues(buf);
+  } catch {
+    buf[0] = Math.floor(Math.random() * 2 ** 32);
+    buf[1] = Math.floor(Math.random() * 2 ** 32);
+  }
+  const seed = (buf[0].toString(36) + buf[1].toString(36)).slice(0, 8);
+  return SEED_RE.test(seed) && seed !== 'demo' ? seed : 'x' + seed.slice(1);
+}
+
 function beep(freq: number) {
   try {
     const ac = new AudioContext();
@@ -128,6 +141,8 @@ export default function App() {
 
   // A friend link opens that date's exhibit, if it has been published.
   const targetDate = challenge.date && getDaily(CATALOG, challenge.date, today).ok ? challenge.date : today;
+  // A link's seed applies to the date it names (or to today if it names none).
+  const linkSeed = challenge.seed && (challenge.date === targetDate || challenge.date === null) ? challenge.seed : null;
   const saved = store.loadRun('daily', targetDate);
   const dailyState = saved.ok && saved.run ? (saved.run.completed ? 'done' : 'active') : 'new';
 
@@ -166,10 +181,11 @@ export default function App() {
 
   const startDaily = (date: string) => {
     const now = utcDateKey(new Date());
-    let s = loadSession(store, CATALOG, 'daily', date, now);
+    const seed = (date === targetDate && linkSeed) || randomSeed();
+    let s = loadSession(store, CATALOG, 'daily', date, now, seed);
     if (s.status === 'problem') {
       setNotice(RESTORE_MSG);
-      s = loadSession(store, CATALOG, 'daily', date, now);
+      s = loadSession(store, CATALOG, 'daily', date, now, seed);
     } else {
       setNotice(null);
     }
@@ -182,12 +198,12 @@ export default function App() {
     if (s.status === 'ok') {
       next = { run: s.run, scenes: s.scenes, stale: s.stale };
     } else {
-      const run = newRun({ mode: 'daily', variant: settings.variant, date, puzzleKey: s.puzzleKey, sceneRefs: s.scenes.map((x) => x.ref) });
+      const run = newRun({ mode: 'daily', variant: settings.variant, date, seed: s.seed, puzzleKey: s.puzzleKey, sceneRefs: s.scenes.map((x) => x.ref) });
       store.saveRun(run);
       next = { run, scenes: s.scenes, stale: false };
       const ctx = { puzzle: run.puzzleKey, mode: run.mode, variant: run.variant };
       track('daily_start', ctx);
-      if (challenge.date === date) track('referral_start', ctx);
+      if (linkSeed && run.seed === linkSeed && challenge.seed !== 'demo') track('referral_start', ctx);
     }
     store.setActive({ mode: 'daily', date });
     setSession(next);
@@ -300,8 +316,13 @@ export default function App() {
             </div>
           )}
           <p className="intro-meta">5 rounds · About 2 minutes · A new exhibit every day</p>
-          {challenge.date === targetDate && targetDate !== today && (
-            <p className="note">A friend sent you exhibit #{edition} ({dateLabel}).</p>
+          {linkSeed && challenge.date === targetDate && (!saved.ok || !saved.run || saved.run.seed === linkSeed) && (
+            <p className="note">
+              A friend sent you their exhibit #{edition} ({dateLabel}). You'll get the exact same five rounds they played.
+            </p>
+          )}
+          {linkSeed && saved.ok && saved.run && saved.run.seed !== linkSeed && (
+            <p className="note">You've already played #{edition} with your own set of rounds, so your score and your friend's aren't directly comparable.</p>
           )}
           {challenge.date === targetDate && challenge.claimed !== null && dailyState !== 'done' && (
             <p className="note">They claim {challenge.claimed}/500. Claimed scores are unverified.</p>
@@ -331,7 +352,7 @@ export default function App() {
           streak={computeStreak(store.completedDates(), today)}
           refreshLabel={refreshLabel}
           isToday={run.date === today}
-          claimed={challenge.date === run.date ? challenge.claimed : null}
+          claimed={challenge.date === run.date && challenge.seed === run.seed ? challenge.claimed : null}
           canReplay={!session!.stale}
           siteBase={siteBase}
           reduced={reduced}
@@ -406,7 +427,10 @@ export default function App() {
               Misfit is a game about judging size by eye, so the comparison itself is visual. Text and icons accompany every colour, and motion follows
               your device's reduced-motion setting.
             </p>
-            <p>One new exhibit a day for everyone, changing at midnight UTC ({refreshLabel}, your time).</p>
+            <p>
+              One scored game a day, changing at midnight UTC ({refreshLabel}, your time). Your five rounds are drawn at random just for you, so no
+              two players are likely to get the same game. "Challenge a friend" sends a link to your exact rounds, so the comparison is fair.
+            </p>
           </div>
         </Modal>
       )}

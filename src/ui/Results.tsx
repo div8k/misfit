@@ -62,7 +62,7 @@ export function Results({ run, edition, dateLabel, streak, refreshLabel, isToday
 
   const challenge = async () => {
     track('share_intent', { ...ctx, props: { channel: 'challenge' } });
-    const text = buildShareText(run, edition, buildChallengeUrl(siteBase, run.date, s.score));
+    const text = buildShareText(run, edition, buildChallengeUrl(siteBase, run.date, run.seed, s.score));
     if (typeof navigator.share === 'function') {
       try {
         await navigator.share({ text });
@@ -82,7 +82,7 @@ export function Results({ run, edition, dateLabel, streak, refreshLabel, isToday
 
   const copyScore = async () => {
     track('share_intent', { ...ctx, props: { channel: 'copy' } });
-    await copyOrFallback(buildShareText(run, edition, buildChallengeUrl(siteBase, run.date)));
+    await copyOrFallback(buildShareText(run, edition, buildChallengeUrl(siteBase, run.date, run.seed)));
   };
 
   const saveCard = async () => {

@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { Action } from '../engine/game.ts';
-import { formatMm, measured } from '../engine/geometry.ts';
+import { formatMm, measured, measureWord } from '../engine/geometry.ts';
 import { maxRoundPoints, roundPoints, verdictFor, verdictText } from '../engine/scoring.ts';
-import type { GameObject, ResolvedScene, RunState } from '../engine/types.ts';
+import type { ResolvedScene, RunState } from '../engine/types.ts';
 import { Board } from './Board.tsx';
 import { useCountUp } from './hooks.ts';
 import { Check, Cross, ResizeControl } from './parts.tsx';
@@ -15,7 +15,6 @@ interface Props {
   reduced: boolean;
 }
 
-const measureWord = (o: GameObject) => (o.measure === 'diameter' ? 'across' : o.measure === 'height' ? 'tall' : 'wide');
 
 function RoundScore({ points, max, reduced }: { points: number; max: number; reduced: boolean }) {
   const shown = useCountUp(points, reduced ? 0 : 350);

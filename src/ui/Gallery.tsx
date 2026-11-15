@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CATALOG } from '../content/index.ts';
 import { formatMm, requiredExtent } from '../engine/geometry.ts';
-import { resolveScene } from '../engine/schedule.ts';
+import { generateGame, resolveScene } from '../engine/schedule.ts';
 import { T_MAX, T_MIN } from '../engine/scoring.ts';
 import type { Scene } from '../engine/types.ts';
 import { sceneIsVerified, validateManifest, validateScene } from '../engine/validate.ts';
@@ -86,6 +86,14 @@ export function Gallery() {
         measurements cannot be published).
       </p>
       {Object.values(CATALOG.scenes).map((s) => (
+        <SceneCard key={s.id} scene={s} />
+      ))}
+      <h2 className="title">Generated sample</h2>
+      <p className="sub">
+        Players' daily games are generated from the catalogue with a random seed. This is the game for seed "sample" on {CATALOG.epoch}; run{' '}
+        <code>npm run count:pool</code> for the size of the whole pool.
+      </p>
+      {(generateGame(CATALOG, `${CATALOG.epoch}:sample`) ?? []).map((s) => (
         <SceneCard key={s.id} scene={s} />
       ))}
       <p>
