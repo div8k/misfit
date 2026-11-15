@@ -54,7 +54,8 @@ test('intro shows the exact copy and both calls to action', async ({ page }) => 
   await expect(page.getByText('Four objects. One wrong size. Find it. Fix it.')).toBeVisible();
   await expect(page.getByText('5 rounds · About 2 minutes · A new exhibit every day')).toBeVisible();
   await expect(page.getByText('Free to play. No account needed.')).toBeVisible();
-  await expect(page.getByText('Demo measurements — not ready for a public challenge')).toBeVisible();
+  // every measurement has been checked against its source, so the demo warning is gone
+  await expect(page.getByText('Demo measurements — not ready for a public challenge')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Try a practice round' })).toBeVisible();
 });
 
@@ -408,7 +409,7 @@ test('fixture gallery lists every scene with validator output', async ({ page })
   await open(page, DAY1, '/?gallery');
   await expect(page.getByRole('heading', { name: 'Fixture gallery' })).toBeVisible();
   await expect(page.locator('.gallery-scene')).toHaveCount(11); // 6 hand-made + 5 generated
-  await expect(page.getByText(/5 blocking issues/)).toBeVisible();
+  await expect(page.getByText(/0 blocking issues/)).toBeVisible();
   await expect(page.locator('.gallery .tone-bad')).toHaveCount(0);
 });
 

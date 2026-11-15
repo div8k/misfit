@@ -40,7 +40,7 @@ const list: Scene[] = [
     distortion: 0.7,
     layout: { extentMm: 208 },
     difficulty: 'medium',
-    explanation: 'An audio cassette is wider than a 3½-inch floppy disk: about 100 mm against 90 mm. It was drawn at 70% of its real size.',
+    explanation: 'An audio cassette is wider than a 3½-inch floppy disk: about 102 mm against 90 mm. It was drawn at 70% of its real size.',
   },
   {
     id: 'wallet',

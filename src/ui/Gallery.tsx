@@ -81,7 +81,7 @@ export function Gallery() {
         Every demo scene at its shared scale, with validator output. Drag a scene's slider to check that the misfit stays inside its cell and clear of
         labels across the full range.
       </p>
-      <p className="banner banner-warn">
+      <p className={publicIssues.length ? 'banner banner-warn' : 'banner'}>
         Public-launch check for {manifest?.date}: {publicIssues.length} blocking {publicIssues.length === 1 ? 'issue' : 'issues'} (unverified
         measurements cannot be published).
       </p>

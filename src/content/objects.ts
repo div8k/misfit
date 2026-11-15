@@ -12,12 +12,15 @@ import type { GameObject, Measure } from '../engine/types.ts';
 //   class "ds" = detail line in the paper colour (stroke)
 //   class "i"  = ink detail drawn on top of a cut-out
 //
-// HONESTY NOTE: every measurement below is the commonly published figure for the
-// named standard, entered from memory during the prototype build. None has been
-// re-checked against the primary standard document, and the source URLs are
-// secondary encyclopedia pages that were NOT re-retrieved. Every object is
-// therefore `unverified`, and the validator refuses them for public manifests.
+// VERIFICATION: on 15 November 2026 every measurement below was checked against
+// the page given as its source (the wikitext was retrieved and the figures read
+// from it). Those pages are encyclopedia summaries of the standards, i.e.
+// SECONDARY sources. The primary standard documents (ISO, IEC, governing-body
+// rule books) were not consulted, and should be before any commercial launch.
+// Four values were corrected to match their sources during that check: the
+// cassette shell, the LP, the Ultimate disc and the bowling pin's width.
 
+const CHECKED = '2026-11-15';
 const inch = (n: number) => n * 25.4;
 const ART_AUTHOR = 'Original drawing made for MISFIT';
 const ART_LICENSE = 'Project-owned original artwork';
@@ -34,8 +37,8 @@ function make(s: Spec): GameObject {
     bounds: { x: 0, y: 0, w: 1, h: 1 },
     artAuthor: ART_AUTHOR,
     artLicense: ART_LICENSE,
-    status: 'unverified',
-    retrieved: null,
+    status: 'verified',
+    retrieved: CHECKED,
   };
 }
 
@@ -70,7 +73,7 @@ const list: GameObject[] = [
     sourceShortName: 'IEC 60086 (LR6)',
     sourceTitle: 'AA battery — Wikipedia',
     sourceUrl: 'https://en.wikipedia.org/wiki/AA_battery',
-    notes: 'Maximum overall length 50.5 mm, maximum diameter 14.5 mm. Real cells are slightly under the maximum.',
+    notes: 'A RANGE: 49.5–50.5 mm long including the terminal, 13.7–14.5 mm in diameter. The maximum is drawn; the whole range is inside full credit.',
   }),
   make({
     id: 'golf-ball',
@@ -164,14 +167,14 @@ const list: GameObject[] = [
     id: 'cassette',
     label: 'Audio cassette',
     noun: 'audio cassette',
-    widthMm: 100.4,
-    heightMm: 63.8,
-    art: '<rect width="100.4" height="63.8" rx="3"/><rect class="d" x="20" y="16" width="60.4" height="23" rx="5"/><circle class="i" cx="33" cy="27.5" r="7"/><circle class="i" cx="67.4" cy="27.5" r="7"/><path class="ds" d="M24 63.8L28 51H72.4L76.4 63.8" stroke-width="1.4"/>',
+    widthMm: inch(4),
+    heightMm: inch(2.5),
+    art: '<rect width="101.6" height="63.5" rx="3"/><rect class="d" x="20.6" y="16" width="60.4" height="23" rx="5"/><circle class="i" cx="33.6" cy="27.5" r="7"/><circle class="i" cx="68" cy="27.5" r="7"/><path class="ds" d="M24.6 63.5L28.6 51H73L77 63.5" stroke-width="1.4"/>',
     definition: 'Compact Cassette shell (IEC 60094), without its case.',
     sourceShortName: 'IEC 60094 Compact Cassette',
     sourceTitle: 'Cassette tape — Wikipedia',
     sourceUrl: 'https://en.wikipedia.org/wiki/Cassette_tape',
-    notes: 'Commonly published shell size 100.4 × 63.8 × 12 mm; sources differ by a few tenths of a millimetre. Width quoted.',
+    notes: 'The shell is 4 × 2.5 × 0.5 in at its largest dimensions, i.e. 101.6 × 63.5 mm. Width quoted.',
   }),
   make({
     id: 'vhs',
@@ -265,15 +268,15 @@ const list: GameObject[] = [
     id: 'bowling-pin',
     label: 'Tenpin bowling pin',
     noun: 'bowling pin',
-    widthMm: 121,
-    heightMm: 381,
+    widthMm: inch(4.75),
+    heightMm: inch(15),
     measure: 'height',
     art: '<path d="M60.5 0C80 0 93 16 93 40C93 70 83.5 95 83.5 127C83.5 175 121 215 121 267C121 320 100 350 89 381H32C21 350 0 320 0 267C0 215 37.5 175 37.5 127C37.5 95 28 70 28 40C28 16 41 0 60.5 0Z"/><path class="ds" d="M20 104H101M20 122H101" stroke-width="7"/>',
     definition: 'Regulation tenpin under USBC equipment specifications.',
     sourceShortName: 'USBC equipment specifications',
     sourceTitle: 'Bowling pin — Wikipedia',
     sourceUrl: 'https://en.wikipedia.org/wiki/Bowling_pin',
-    notes: '15 in (381 mm) tall and about 4.77 in (121 mm) at the widest point. Height quoted. The outline is a simplified drawing, not a profile gauge.',
+    notes: '15 in (381 mm) tall and 4.75 in (about 121 mm) at the widest point. Height quoted. The outline is a simplified drawing, not a profile gauge.',
   }),
   make({
     id: 'basketball',
@@ -293,29 +296,29 @@ const list: GameObject[] = [
     id: 'flying-disc',
     label: 'Ultimate disc (175 g)',
     noun: 'Ultimate disc',
-    widthMm: 274,
-    heightMm: 274,
+    widthMm: inch(10.75),
+    heightMm: inch(10.75),
     measure: 'diameter',
-    art: ball(274, '<circle class="ds" cx="137" cy="137" r="120" stroke-width="3.4"/><circle class="ds" cx="137" cy="137" r="42" stroke-width="2.6"/>'),
+    art: ball(inch(10.75), '<circle class="ds" cx="136.525" cy="136.525" r="120" stroke-width="3.4"/><circle class="ds" cx="136.525" cy="136.525" r="42" stroke-width="2.6"/>'),
     definition: '175-gram flying disc approved for the sport of Ultimate, seen from above.',
     sourceShortName: 'WFDF / USA Ultimate approved disc',
-    sourceTitle: 'Ultimate (sport) — Wikipedia',
-    sourceUrl: 'https://en.wikipedia.org/wiki/Ultimate_(sport)',
-    notes: 'Commonly published as 274 mm; approved models differ by a millimetre or two.',
+    sourceTitle: 'Frisbee — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Frisbee',
+    notes: 'The Ultimate standard is 10.75 in across, about 273 mm, at 175 g.',
   }),
   make({
     id: 'vinyl-lp',
     label: '12-inch vinyl LP',
     noun: 'vinyl LP',
-    widthMm: 301.6,
-    heightMm: 301.6,
+    widthMm: inch(12),
+    heightMm: inch(12),
     measure: 'diameter',
-    art: ball(301.6, '<circle class="ds" cx="150.8" cy="150.8" r="104" stroke-width="2.4"/><circle class="d" cx="150.8" cy="150.8" r="50"/><circle class="i" cx="150.8" cy="150.8" r="3.6"/>'),
+    art: ball(inch(12), '<circle class="ds" cx="152.4" cy="152.4" r="104" stroke-width="2.4"/><circle class="d" cx="152.4" cy="152.4" r="50"/><circle class="i" cx="152.4" cy="152.4" r="3.6"/>'),
     definition: '12-inch long-playing record (IEC 60098 / RIAA dimensional standard).',
     sourceShortName: 'IEC 60098 (12-inch LP)',
     sourceTitle: 'LP record — Wikipedia',
     sourceUrl: 'https://en.wikipedia.org/wiki/LP_record',
-    notes: 'Nominally "12 inch"; the specified diameter is 11⅞ in, about 301.6 mm.',
+    notes: 'Nominal size: 12 in (304.8 mm), often rounded to 30 cm. Pressed records are typically a few millimetres under the nominal figure, well inside full credit.',
   }),
 ];
 

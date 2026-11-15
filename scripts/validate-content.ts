@@ -31,4 +31,4 @@ if (hasErrors(issues) || previewFailures > 0) {
   console.log(asPublic ? '\nNot publishable. Verify every measurement against its primary source first.' : '\nContent has errors.');
   process.exit(1);
 }
-console.log('\nContent is valid for demo use.');
+console.log(asPublic ? '\nContent passes the public-launch check.' : '\nContent is valid.');

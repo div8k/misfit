@@ -14,7 +14,8 @@ export default defineConfig({
   webServer: {
     command: build ? `npm run build && npm run preview -- --port ${PORT} --strictPort` : `npm run dev -- --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: false,
+    // Reuse a dev server that is already running; always rebuild for the build target.
+    reuseExistingServer: !build,
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] }, grepInvert: /@touch/ },

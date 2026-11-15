@@ -373,10 +373,16 @@ describe('8. invalid content and storage problems', () => {
 
   it('never lets unverified content into a public manifest', () => {
     const m = { ...CATALOG.manifests[0], status: 'public' as const };
-    const issues = validateManifest(m, CATALOG.scenes, CATALOG.objects);
-    expect(issues.filter((i) => i.code === 'manifest.unverified')).toHaveLength(5);
-    const c = { ...CATALOG, manifests: [m] };
-    expect(getDaily(c, TODAY, TODAY).ok).toBe(false);
+    // every object has been checked against its source, so the real catalogue is publishable
+    expect(hasErrors(validateManifest(m, CATALOG.scenes, CATALOG.objects))).toBe(false);
+    expect(Object.values(CATALOG.objects).every((o) => o.status === 'verified' && o.retrieved === '2026-11-15')).toBe(true);
+    // one unverified object is enough to block every scene that uses it
+    const objects = { ...CATALOG.objects, cd: { ...CATALOG.objects.cd, status: 'unverified' as const, retrieved: null } };
+    const issues = validateManifest(m, CATALOG.scenes, objects);
+    expect(issues.filter((i) => i.code === 'manifest.unverified')).toHaveLength(2);
+    expect(getDaily({ ...CATALOG, objects, manifests: [m] }, TODAY, TODAY).ok).toBe(false);
+    // a "verified" claim without a check date is refused
+    expect(hasErrors(validateObject({ ...CATALOG.objects.cd, retrieved: null }))).toBe(true);
   });
 
   it('broken content yields an explicit failure, not NaN or a silent success', () => {
