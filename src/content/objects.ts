@@ -1,0 +1,322 @@
+import type { GameObject, Measure } from '../engine/types.ts';
+
+// OBJECT CATALOGUE
+// ----------------
+// All artwork here is original, drawn for this project as plain SVG markup.
+// Each drawing is authored directly in millimetres: the viewBox is exactly the
+// object's true width × height, so there is no decorative padding to subtract
+// (bounds = the whole viewBox).
+//
+// Art classes: default fill is the ink colour (currentColor);
+//   class "d"  = detail cut out in the paper colour (fill)
+//   class "ds" = detail line in the paper colour (stroke)
+//   class "i"  = ink detail drawn on top of a cut-out
+//
+// HONESTY NOTE: every measurement below is the commonly published figure for the
+// named standard, entered from memory during the prototype build. None has been
+// re-checked against the primary standard document, and the source URLs are
+// secondary encyclopedia pages that were NOT re-retrieved. Every object is
+// therefore `unverified`, and the validator refuses them for public manifests.
+
+const inch = (n: number) => n * 25.4;
+const ART_AUTHOR = 'Original drawing made for MISFIT';
+const ART_LICENSE = 'Project-owned original artwork';
+
+type Spec = Omit<GameObject, 'viewBox' | 'bounds' | 'artAuthor' | 'artLicense' | 'status' | 'retrieved' | 'measure'> & {
+  measure?: Measure;
+};
+
+function make(s: Spec): GameObject {
+  return {
+    ...s,
+    measure: s.measure ?? 'width',
+    viewBox: [0, 0, s.widthMm, s.heightMm],
+    bounds: { x: 0, y: 0, w: 1, h: 1 },
+    artAuthor: ART_AUTHOR,
+    artLicense: ART_LICENSE,
+    status: 'unverified',
+    retrieved: null,
+  };
+}
+
+function ball(d: number, details: string): string {
+  const r = d / 2;
+  return `<circle cx="${r}" cy="${r}" r="${r}"/>${details}`;
+}
+
+const list: GameObject[] = [
+  make({
+    id: 'credit-card',
+    label: 'Payment card (ID-1)',
+    noun: 'payment card',
+    widthMm: 85.6,
+    heightMm: 53.98,
+    art: '<rect width="85.6" height="53.98" rx="3.2"/><rect class="d" x="8" y="17" width="12.5" height="9.5" rx="1.6"/><rect class="d" x="8" y="37" width="46" height="3.2" rx="1.6"/>',
+    definition: 'ISO/IEC 7810 ID-1 identification card, the format used by bank cards.',
+    sourceShortName: 'ISO/IEC 7810 (ID-1)',
+    sourceTitle: 'ISO/IEC 7810 — Wikipedia summary of the standard',
+    sourceUrl: 'https://en.wikipedia.org/wiki/ISO/IEC_7810',
+    notes: 'Nominal 85.60 × 53.98 mm. Width quoted.',
+  }),
+  make({
+    id: 'aa-battery',
+    label: 'AA battery',
+    noun: 'AA battery',
+    widthMm: 14.5,
+    heightMm: 50.5,
+    measure: 'height',
+    art: '<rect x="4.75" width="5" height="3" rx="0.9"/><rect y="1.6" width="14.5" height="48.9" rx="1.6"/><rect class="d" y="9.5" width="14.5" height="1.3"/>',
+    definition: 'IEC 60086 size R6 / LR6 cylindrical cell ("AA"), including the terminal.',
+    sourceShortName: 'IEC 60086 (LR6)',
+    sourceTitle: 'AA battery — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/AA_battery',
+    notes: 'Maximum overall length 50.5 mm, maximum diameter 14.5 mm. Real cells are slightly under the maximum.',
+  }),
+  make({
+    id: 'golf-ball',
+    label: 'Golf ball',
+    noun: 'golf ball',
+    widthMm: 42.67,
+    heightMm: 42.67,
+    measure: 'diameter',
+    art: ball(
+      42.67,
+      [[21.3, 12], [13, 17.5], [29.6, 17.5], [21.3, 23], [13, 28.5], [29.6, 28.5], [21.3, 34]]
+        .map(([x, y]) => `<circle class="d" cx="${x}" cy="${y}" r="1.5"/>`)
+        .join(''),
+    ),
+    definition: 'Conforming golf ball under the R&A / USGA Equipment Rules.',
+    sourceShortName: 'R&A / USGA Equipment Rules',
+    sourceTitle: 'Golf ball — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Golf_ball',
+    notes: 'The rules set a minimum diameter of 42.67 mm (1.680 in); almost all balls are made at that minimum.',
+  }),
+  make({
+    id: 'tt-ball',
+    label: 'Table tennis ball',
+    noun: 'table tennis ball',
+    widthMm: 40,
+    heightMm: 40,
+    measure: 'diameter',
+    art: ball(40, '<circle class="d" cx="14" cy="20" r="1.7"/><circle class="d" cx="20" cy="20" r="1.7"/><circle class="d" cx="26" cy="20" r="1.7"/>'),
+    definition: 'ITTF regulation 40 mm competition ball.',
+    sourceShortName: 'ITTF Laws of Table Tennis',
+    sourceTitle: 'Table tennis — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Table_tennis',
+    notes: 'Nominal 40 mm diameter ("40+" plastic balls measure 40.0–40.6 mm).',
+  }),
+  make({
+    id: 'sd-card',
+    label: 'SD memory card',
+    noun: 'SD card',
+    widthMm: 24,
+    heightMm: 32,
+    measure: 'height',
+    art: '<path d="M2 0H19L24 5V30a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2Z"/><rect class="d" x="3.5" y="10" width="17" height="15" rx="1.2"/>',
+    definition: 'Full-size SD card (SD Association physical specification), not miniSD or microSD.',
+    sourceShortName: 'SD Association specification',
+    sourceTitle: 'SD card — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/SD_card',
+    notes: 'Full-size card: 24 × 32 × 2.1 mm. Height quoted.',
+  }),
+  make({
+    id: 'nine-volt',
+    label: '9-volt battery',
+    noun: '9-volt battery',
+    widthMm: 26.5,
+    heightMm: 48.5,
+    measure: 'height',
+    art: '<rect x="4" width="6.5" height="6" rx="1.4"/><rect x="15" y="0.6" width="8.5" height="5.4" rx="2.4"/><rect y="4.4" width="26.5" height="44.1" rx="2"/><rect class="d" y="12" width="26.5" height="1.4"/>',
+    definition: 'IEC 60086 size 6LR61 / 6F22 ("PP3") rectangular battery, including terminals.',
+    sourceShortName: 'IEC 60086 (6LR61)',
+    sourceTitle: 'Nine-volt battery — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Nine-volt_battery',
+    notes: 'Maximum 48.5 mm tall, 26.5 mm wide, 17.5 mm deep. Drawn face-on.',
+  }),
+  make({
+    id: 'cd',
+    label: 'Compact disc',
+    noun: 'compact disc',
+    widthMm: 120,
+    heightMm: 120,
+    measure: 'diameter',
+    art: ball(120, '<circle class="ds" cx="60" cy="60" r="20" stroke-width="1.4"/><circle class="d" cx="60" cy="60" r="7.5"/>'),
+    definition: 'Standard 120 mm audio CD (IEC 60908, "Red Book").',
+    sourceShortName: 'IEC 60908 (Red Book)',
+    sourceTitle: 'Compact disc — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Compact_disc',
+    notes: '120 mm diameter with a 15 mm centre hole.',
+  }),
+  make({
+    id: 'floppy',
+    label: '3½-inch floppy disk',
+    noun: 'floppy disk',
+    widthMm: 90,
+    heightMm: 94,
+    art: '<path d="M2.5 0H84L90 6V91.5a2.5 2.5 0 0 1-2.5 2.5H2.5A2.5 2.5 0 0 1 0 91.5V2.5A2.5 2.5 0 0 1 2.5 0Z"/><rect class="d" x="24" y="0" width="42" height="28" rx="1.2"/><rect class="i" x="52" y="4.5" width="9" height="19" rx="1"/><rect class="d" x="10" y="50" width="70" height="44" rx="2.2"/>',
+    definition: '90 mm (3½-inch) flexible disk cartridge, ISO/IEC 9529.',
+    sourceShortName: 'ISO/IEC 9529',
+    sourceTitle: 'Floppy disk — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Floppy_disk',
+    notes: 'The shell is 90.0 mm wide and 94.0 mm tall — not square, and not 3.5 inches wide. Width quoted.',
+  }),
+  make({
+    id: 'cassette',
+    label: 'Audio cassette',
+    noun: 'audio cassette',
+    widthMm: 100.4,
+    heightMm: 63.8,
+    art: '<rect width="100.4" height="63.8" rx="3"/><rect class="d" x="20" y="16" width="60.4" height="23" rx="5"/><circle class="i" cx="33" cy="27.5" r="7"/><circle class="i" cx="67.4" cy="27.5" r="7"/><path class="ds" d="M24 63.8L28 51H72.4L76.4 63.8" stroke-width="1.4"/>',
+    definition: 'Compact Cassette shell (IEC 60094), without its case.',
+    sourceShortName: 'IEC 60094 Compact Cassette',
+    sourceTitle: 'Cassette tape — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Cassette_tape',
+    notes: 'Commonly published shell size 100.4 × 63.8 × 12 mm; sources differ by a few tenths of a millimetre. Width quoted.',
+  }),
+  make({
+    id: 'vhs',
+    label: 'VHS tape',
+    noun: 'VHS tape',
+    widthMm: 187,
+    heightMm: 103,
+    art: '<rect width="187" height="103" rx="3.5"/><rect class="d" x="60" y="10" width="67" height="11" rx="2"/><rect class="d" x="28" y="34" width="52" height="40" rx="4"/><rect class="d" x="107" y="34" width="52" height="40" rx="4"/><circle class="i" cx="54" cy="54" r="13"/><circle class="i" cx="133" cy="54" r="13"/>',
+    definition: 'Full-size VHS video cassette (IEC 60774), without sleeve.',
+    sourceShortName: 'IEC 60774 (VHS)',
+    sourceTitle: 'VHS — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/VHS',
+    notes: 'Cassette is 187 × 103 × 25 mm. Width quoted.',
+  }),
+  make({
+    id: 'tennis-ball',
+    label: 'Tennis ball',
+    noun: 'tennis ball',
+    widthMm: 67,
+    heightMm: 67,
+    measure: 'diameter',
+    art: ball(67, '<path class="ds" d="M9.5 12Q34 33.5 9.5 55" stroke-width="2.2"/><path class="ds" d="M57.5 12Q33 33.5 57.5 55" stroke-width="2.2"/>'),
+    definition: 'ITF-approved Type 2 (standard) tennis ball.',
+    sourceShortName: 'ITF Rules of Tennis',
+    sourceTitle: 'Tennis ball — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Tennis_ball',
+    notes: 'A RANGE, not one number: the rules allow 65.41–68.58 mm. 67.0 mm (mid-range) is used; the whole permitted range falls inside full credit.',
+  }),
+  make({
+    id: 'baseball',
+    label: 'Baseball',
+    noun: 'baseball',
+    widthMm: 73.8,
+    heightMm: 73.8,
+    measure: 'diameter',
+    art: ball(
+      73.8,
+      '<path class="ds" d="M17 7.5Q36 36.9 17 66.3" stroke-width="1.3"/><path class="ds" d="M17 7.5Q36 36.9 17 66.3" stroke-width="5.5" stroke-dasharray="1.2 3.4"/><path class="ds" d="M56.8 7.5Q37.8 36.9 56.8 66.3" stroke-width="1.3"/><path class="ds" d="M56.8 7.5Q37.8 36.9 56.8 66.3" stroke-width="5.5" stroke-dasharray="1.2 3.4"/>',
+    ),
+    definition: 'Regulation baseball under the Official Baseball Rules (MLB).',
+    sourceShortName: 'Official Baseball Rules',
+    sourceTitle: 'Baseball (ball) — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Baseball_(ball)',
+    notes: `A RANGE: circumference 9–9¼ in, i.e. about ${(inch(9) / Math.PI).toFixed(1)}–${(inch(9.25) / Math.PI).toFixed(1)} mm diameter. 73.8 mm (mid-range) is used.`,
+  }),
+  make({
+    id: 'pool-ball',
+    label: 'Pool ball',
+    noun: 'pool ball',
+    widthMm: inch(2.25),
+    heightMm: inch(2.25),
+    measure: 'diameter',
+    art: ball(
+      57.15,
+      '<circle class="d" cx="28.575" cy="28.575" r="11.5"/><circle cx="28.575" cy="24.9" r="3.1" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="28.575" cy="32.3" r="3.8" fill="none" stroke="currentColor" stroke-width="1.9"/>',
+    ),
+    definition: 'American-style pool ball to World Pool-Billiard Association equipment specifications.',
+    sourceShortName: 'WPA equipment specifications',
+    sourceTitle: 'Billiard ball — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Billiard_ball',
+    notes: '2¼ in = 57.15 mm. British-style pool and snooker balls are smaller and are different objects.',
+  }),
+  make({
+    id: 'dollar-bill',
+    label: 'US $1 bill',
+    noun: 'dollar bill',
+    widthMm: 156,
+    heightMm: 66.3,
+    art: '<rect width="156" height="66.3" rx="1"/><rect class="ds" x="5" y="5" width="146" height="56.3" stroke-width="1.2"/><ellipse class="d" cx="78" cy="33.15" rx="15" ry="20.5"/><circle class="d" cx="22" cy="33.15" r="7.5"/><circle class="d" cx="134" cy="33.15" r="7.5"/>',
+    definition: 'Current-size United States Federal Reserve Note (all denominations share one size).',
+    sourceShortName: 'US Bureau of Engraving and Printing',
+    sourceTitle: 'United States one-dollar bill — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/United_States_one-dollar_bill',
+    notes: '6.14 × 2.61 in, about 156.0 × 66.3 mm. Width quoted.',
+  }),
+  make({
+    id: 'passport',
+    label: 'Passport booklet (ID-3)',
+    noun: 'passport',
+    widthMm: 88,
+    heightMm: 125,
+    measure: 'height',
+    art: '<rect width="88" height="125" rx="4"/><rect class="d" x="22" y="20" width="44" height="5" rx="2.5"/><circle class="ds" cx="44" cy="58" r="16" stroke-width="2.4"/><path class="ds" d="M28 58H60M44 42V74" stroke-width="1.6"/><rect class="ds" x="35" y="97" width="18" height="10" rx="2.5" stroke-width="1.8"/>',
+    definition: 'ISO/IEC 7810 ID-3 booklet, the size used for passports (ICAO Doc 9303), closed.',
+    sourceShortName: 'ISO/IEC 7810 (ID-3)',
+    sourceTitle: 'ISO/IEC 7810 — Wikipedia summary of the standard',
+    sourceUrl: 'https://en.wikipedia.org/wiki/ISO/IEC_7810',
+    notes: 'Nominal 125 × 88 mm. Height quoted. Cover design is invented, not any country’s.',
+  }),
+  make({
+    id: 'bowling-pin',
+    label: 'Tenpin bowling pin',
+    noun: 'bowling pin',
+    widthMm: 121,
+    heightMm: 381,
+    measure: 'height',
+    art: '<path d="M60.5 0C80 0 93 16 93 40C93 70 83.5 95 83.5 127C83.5 175 121 215 121 267C121 320 100 350 89 381H32C21 350 0 320 0 267C0 215 37.5 175 37.5 127C37.5 95 28 70 28 40C28 16 41 0 60.5 0Z"/><path class="ds" d="M20 104H101M20 122H101" stroke-width="7"/>',
+    definition: 'Regulation tenpin under USBC equipment specifications.',
+    sourceShortName: 'USBC equipment specifications',
+    sourceTitle: 'Bowling pin — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Bowling_pin',
+    notes: '15 in (381 mm) tall and about 4.77 in (121 mm) at the widest point. Height quoted. The outline is a simplified drawing, not a profile gauge.',
+  }),
+  make({
+    id: 'basketball',
+    label: 'Basketball (size 7)',
+    noun: 'basketball',
+    widthMm: 242,
+    heightMm: 242,
+    measure: 'diameter',
+    art: ball(242, '<path class="ds" d="M121 0V242M0 121H242M35.4 35.4Q112 121 35.4 206.6M206.6 35.4Q130 121 206.6 206.6" stroke-width="4.2"/>'),
+    definition: 'Size 7 men’s basketball (FIBA Official Basketball Rules).',
+    sourceShortName: 'FIBA rules (size 7)',
+    sourceTitle: 'Basketball (ball) — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Basketball_(ball)',
+    notes: 'A RANGE: circumference 750–770 mm, i.e. about 239–245 mm diameter. 242 mm (mid-range) is used.',
+  }),
+  make({
+    id: 'flying-disc',
+    label: 'Ultimate disc (175 g)',
+    noun: 'Ultimate disc',
+    widthMm: 274,
+    heightMm: 274,
+    measure: 'diameter',
+    art: ball(274, '<circle class="ds" cx="137" cy="137" r="120" stroke-width="3.4"/><circle class="ds" cx="137" cy="137" r="42" stroke-width="2.6"/>'),
+    definition: '175-gram flying disc approved for the sport of Ultimate, seen from above.',
+    sourceShortName: 'WFDF / USA Ultimate approved disc',
+    sourceTitle: 'Ultimate (sport) — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/Ultimate_(sport)',
+    notes: 'Commonly published as 274 mm; approved models differ by a millimetre or two.',
+  }),
+  make({
+    id: 'vinyl-lp',
+    label: '12-inch vinyl LP',
+    noun: 'vinyl LP',
+    widthMm: 301.6,
+    heightMm: 301.6,
+    measure: 'diameter',
+    art: ball(301.6, '<circle class="ds" cx="150.8" cy="150.8" r="104" stroke-width="2.4"/><circle class="d" cx="150.8" cy="150.8" r="50"/><circle class="i" cx="150.8" cy="150.8" r="3.6"/>'),
+    definition: '12-inch long-playing record (IEC 60098 / RIAA dimensional standard).',
+    sourceShortName: 'IEC 60098 (12-inch LP)',
+    sourceTitle: 'LP record — Wikipedia',
+    sourceUrl: 'https://en.wikipedia.org/wiki/LP_record',
+    notes: 'Nominally "12 inch"; the specified diameter is 11⅞ in, about 301.6 mm.',
+  }),
+];
+
+export const OBJECTS: Record<string, GameObject> = Object.fromEntries(list.map((o) => [o.id, o]));
