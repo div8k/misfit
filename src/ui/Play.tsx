@@ -50,6 +50,20 @@ export function Play({ run, scenes, act, heading, reduced }: Props) {
     else headRef.current?.focus(opts);
   }, [phase, run.round]);
 
+  // Number keys 1–4 pick an object while identifying.
+  useEffect(() => {
+    if (phase !== 'identify') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || document.querySelector('dialog[open]')) return;
+      const i = ['1', '2', '3', '4'].indexOf(e.key);
+      if (i >= 0 && scene.objects[i]) act({ type: 'select', id: scene.objects[i].id });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase, scene, act]);
+
+  const soFar = run.results.reduce((s, r) => s + roundPoints(r), 0);
+
   let title: React.ReactNode;
   let sub: React.ReactNode;
   if (phase === 'identify') {
@@ -168,6 +182,11 @@ export function Play({ run, scenes, act, heading, reduced }: Props) {
           </>
         )}
       </div>
+      {run.mode === 'daily' && run.results.length > 0 && (
+        <p className="note running">
+          Score so far: {soFar} of {run.results.length * maxRoundPoints(run.variant)}
+        </p>
+      )}
     </main>
   );
 }

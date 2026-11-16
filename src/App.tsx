@@ -3,7 +3,7 @@ import { CATALOG } from './content/index.ts';
 import { createDebugSink, createTracker } from './engine/analytics.ts';
 import { newRun, reduce, type Action } from './engine/game.ts';
 import { editionFor, formatDateLabel, formatRefreshLocal, getDaily, nextRefresh, resolveScene, SEED_RE, utcDateKey } from './engine/schedule.ts';
-import { roundPoints, summarize } from './engine/scoring.ts';
+import { career, roundPoints, summarize } from './engine/scoring.ts';
 import { loadSession, resumeActive } from './engine/session.ts';
 import { BANDS, parseChallenge } from './engine/share.ts';
 import { computeStreak, createStore, DEFAULT_SETTINGS, type Settings, type StorageLike } from './engine/storage.ts';
@@ -162,6 +162,11 @@ export default function App() {
     }
     if (next.completed && next.mode === 'practice') {
       track('tutorial_complete', ctx);
+      const st = store.getSettings();
+      if (!st.practiced) {
+        store.setSettings({ ...st, practiced: true });
+        setSettingsState((cur) => ({ ...cur, practiced: true }));
+      }
       store.discardRun('practice', next.date);
       store.setActive(null);
       sessionRef.current = null;
@@ -213,13 +218,14 @@ export default function App() {
   const startPractice = () => {
     const now = utcDateKey(new Date());
     store.discardRun('practice', now);
-    const s = loadSession(store, CATALOG, 'practice', now, now);
+    // The first practice is the fixed teaching round; after that each one is a fresh random round.
+    const s = loadSession(store, CATALOG, 'practice', now, now, settings.practiced ? randomSeed() : '');
     if (s.status !== 'none') {
       track('content_issue', { props: { where: 'practice' } });
       setView('error');
       return;
     }
-    const run = newRun({ mode: 'practice', variant: settings.variant, date: now, puzzleKey: s.puzzleKey, sceneRefs: s.scenes.map((x) => x.ref) });
+    const run = newRun({ mode: 'practice', variant: settings.variant, date: now, seed: s.seed, puzzleKey: s.puzzleKey, sceneRefs: s.scenes.map((x) => x.ref) });
     store.saveRun(run);
     store.setActive({ mode: 'practice', date: now });
     track('tutorial_start', { puzzle: run.puzzleKey, mode: run.mode, variant: run.variant });
@@ -335,6 +341,7 @@ export default function App() {
               Try a practice round
             </button>
           </div>
+          {settings.practiced && <p className="note">Practice rounds are random and unlimited. They never affect your daily score.</p>}
           {dailyState === 'done' && targetDate === today && <p className="note">Next exhibit: {refreshLabel}, your time.</p>}
           <p className="assurance">Free to play. No account needed.</p>
         </main>
@@ -350,6 +357,7 @@ export default function App() {
           edition={edition}
           dateLabel={dateLabel}
           streak={computeStreak(store.completedDates(), today)}
+          career={career(store.completedRuns())}
           refreshLabel={refreshLabel}
           isToday={run.date === today}
           claimed={challenge.date === run.date && challenge.seed === run.seed ? challenge.claimed : null}
@@ -420,7 +428,7 @@ export default function App() {
             <p>Shared scores never include object names, sizes or answers.</p>
             <h3>Controls</h3>
             <p>
-              Drag the slider, or use the minus and plus buttons. With a keyboard: Tab to an object and press Enter or Space to pick it; arrow keys
+              Drag the slider, or use the minus and plus buttons. With a keyboard: press 1 to 4 to pick an object (or Tab to it and press Enter); arrow keys
               nudge the size by about half a percent, and Shift + arrow by about 5%.
             </p>
             <p>

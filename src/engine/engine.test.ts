@@ -4,6 +4,7 @@ import { newRun, reduce, type Action } from './game.ts';
 import { ASPECT, cellWidthPx, FIT_H, FIT_W, measured, place, VIEWPORTS } from './geometry.ts';
 import { addDays, buildRound, editionFor, formatRefreshLocal, GEN_DISTORTIONS, getDaily, getPractice, nextRefresh, rng, utcDateKey, type Catalog } from './schedule.ts';
 import {
+  career,
   repairPoints,
   repairPointsForRatio,
   SLIDER_STEPS,
@@ -458,7 +459,7 @@ describe('8. invalid content and storage problems', () => {
     const store = createStore(throwing, (op) => errors.push(op));
     const { run } = start();
     expect(() => store.saveRun(run)).not.toThrow();
-    expect(store.getSettings()).toEqual({ sound: false, reduceMotion: false, variant: 'A' });
+    expect(store.getSettings()).toEqual({ sound: false, reduceMotion: false, variant: 'A', practiced: false });
     expect(errors.length).toBeGreaterThan(0);
     expect(createStore(null).persistent).toBe(false);
   });
@@ -626,6 +627,41 @@ describe('9. colour contrast of the actual text/background pairs', () => {
     const pairs: [string, string][] = [[c.edge, c.paper], [c.edge, c.surface], [c.blue, c.blueSoft], [c.coral, c.coralSoft], [c.ink, c.surface]];
     for (const [fg, bg] of pairs) expect(ratio(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(3);
   });
+});
+
+it('practice is the teaching round first, then an endless supply of random rounds', () => {
+  const first = getPractice(CATALOG);
+  expect(first.ok && first.scenes[0].id).toBe('tutorial-pocket');
+  const seen = new Set<string>();
+  for (let i = 0; i < 300; i++) {
+    const p = getPractice(CATALOG, `q${i}`);
+    expect(p.ok).toBe(true);
+    if (p.ok) {
+      expect(p.scenes).toHaveLength(1);
+      seen.add(p.scenes[0].ref);
+      expect(JSON.stringify(getPractice(CATALOG, `q${i}`))).toBe(JSON.stringify(p));
+    }
+  }
+  expect(seen.size).toBeGreaterThan(290);
+  expect(getPractice(CATALOG, '../bad').ok).toBe(false);
+  // a random practice run survives a reload
+  const store = createStore(memoryStorage());
+  const p = getPractice(CATALOG, 'q1');
+  if (!p.ok) throw new Error('no practice');
+  const run = newRun({ mode: 'practice', variant: 'A', date: TODAY, seed: p.seed, puzzleKey: p.puzzleKey, sceneRefs: p.scenes.map((s) => s.ref) });
+  store.saveRun(run);
+  store.setActive({ mode: 'practice', date: TODAY });
+  const back = resumeActive(store, CATALOG, TODAY);
+  expect(back.kind === 'resume' && back.scenes[0].ref).toBe(p.scenes[0].ref);
+});
+
+it('career stats average across saved games', () => {
+  expect(career([])).toEqual({ played: 0, averagePercent: 0, bestPercent: 0 });
+  let { run, scenes } = start();
+  for (const s of scenes) run = playRound(run, scenes, 'right', -Math.log(s.distortion));
+  let b = start().run;
+  for (const s of scenes) b = playRound(b, scenes, 'wrong', -Math.log(s.distortion));
+  expect(career([run, b])).toEqual({ played: 2, averagePercent: 80, bestPercent: 100 });
 });
 
 it('measured dimension follows the object definition', () => {

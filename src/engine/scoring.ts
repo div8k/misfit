@@ -88,6 +88,25 @@ export function summarize(results: RoundResult[], variant: Variant, rounds: numb
   };
 }
 
+export interface Career {
+  played: number;
+  /** Average and best as a percentage of the maximum, so variants A and B can sit together. */
+  averagePercent: number;
+  bestPercent: number;
+}
+
+export function career(runs: { results: RoundResult[]; variant: Variant; sceneRefs: string[] }[]): Career {
+  const pcts = runs.map((r) => {
+    const s = summarize(r.results, r.variant, r.sceneRefs.length);
+    return (s.score / s.max) * 100;
+  });
+  return {
+    played: pcts.length,
+    averagePercent: pcts.length ? Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length) : 0,
+    bestPercent: pcts.length ? Math.round(Math.max(...pcts)) : 0,
+  };
+}
+
 export type Verdict = { kind: 'big' | 'small'; percent: number } | { kind: 'right' };
 
 export function verdictFor(r: number): Verdict {

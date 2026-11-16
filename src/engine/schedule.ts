@@ -207,10 +207,20 @@ export function getDaily(c: Catalog, date: string, today: string, seed: string =
   return { ok: true, seed, generated: true, scenes: scenes as ResolvedScene[], puzzleKey };
 }
 
-export function getPractice(c: Catalog): { ok: true; scenes: ResolvedScene[]; puzzleKey: string } | { ok: false; issues: Issue[] } {
+/**
+ * Practice content. Without a seed it is the fixed teaching round; with one it
+ * is a single random round from the generator, so practice never runs out.
+ */
+export function getPractice(c: Catalog, seed = ''): { ok: true; seed: string; scenes: ResolvedScene[]; puzzleKey: string } | { ok: false; issues: Issue[] } {
+  if (seed) {
+    const game = SEED_RE.test(seed) ? generateGame(c, `practice:${seed}`) : null;
+    const round = game ? resolveScene({ ...game[0], title: 'Practice exhibit' }, c.objects) : null;
+    if (!round) return { ok: false, issues: [] };
+    return { ok: true, seed, scenes: [round], puzzleKey: `practice:${seed}` };
+  }
   const scene = c.scenes[c.tutorialId];
   const issues = scene ? validateScene(scene, c.objects) : [{ level: 'error' as const, code: 'scene.missing', ref: c.tutorialId, message: 'Tutorial scene missing' }];
   const resolved = scene && !hasErrors(issues) ? resolveScene(scene, c.objects) : null;
   if (!resolved) return { ok: false, issues };
-  return { ok: true, scenes: [resolved], puzzleKey: `practice:${resolved.ref}` };
+  return { ok: true, seed: '', scenes: [resolved], puzzleKey: `practice:${resolved.ref}` };
 }

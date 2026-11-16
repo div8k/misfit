@@ -369,3 +369,6 @@ input[type='range']:focus-visible::-moz-range-thumb { outline: 3px solid var(--f
 .sheet figure { --cell-bg: var(--surface); background: var(--surface); border: 1.5px solid var(--edge); border-radius: var(--radius-sm); padding: var(--space-2); display: grid; gap: 4px; align-content: space-between; }
 .sheet .draw { background: none; height: 84px; }
 .sheet figcaption { font-size: 12px; line-height: 1.3; font-weight: 600; text-align: center; }
+
+.section { font: 700 17px/1.2 var(--display); margin-bottom: calc(-1 * var(--space-2)); }
+.running { text-align: center; font-variant-numeric: tabular-nums; }

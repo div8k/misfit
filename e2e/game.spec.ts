@@ -505,3 +505,42 @@ for (const seed of ['r1', 'r2', 'r3', 'r4', 'r5', 'r6']) {
     await expect(page.getByText(/^\d\/5 spotted · \d{1,3}\/500 points$/)).toBeVisible();
   });
 }
+
+test('number keys pick objects, the running score shows, and results include a personal record', async ({ page }) => {
+  await open(page);
+  await page.getByRole('button', { name: "Play today's Misfit" }).click();
+  await page.keyboard.press('2');
+  await expect(cell(page, 'SD memory card')).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('4');
+  await expect(cell(page, '9-volt battery')).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('2');
+  await page.getByRole('button', { name: "That's the misfit" }).click();
+  await page.getByRole('slider').fill('-75');
+  await page.getByRole('button', { name: 'Lock it in' }).click();
+  await expect(page.getByText('Score so far: 100 of 100')).toBeVisible();
+  await page.getByRole('button', { name: 'Next round' }).click();
+  for (let i = 0; i < 4; i++) await playRoundWithMouse(page);
+  await expect(page.getByText('Your record on this device')).toBeVisible();
+  await expect(page.locator('.stats').last()).toContainText('Games played1');
+});
+
+test('practice is the teaching round once, then random and unlimited', async ({ page }) => {
+  await open(page);
+  const practiceOnce = async () => {
+    await page.getByRole('button', { name: 'Try a practice round' }).click();
+    const labels = (await page.locator('.label').allTextContents()).join('|');
+    await page.locator('button.cell').first().click();
+    await page.getByRole('button', { name: "That's the misfit" }).click();
+    await page.getByRole('button', { name: 'Lock it in' }).click();
+    await page.getByRole('button', { name: 'Back to start', exact: true }).click();
+    return labels;
+  };
+  const first = await practiceOnce();
+  expect(first).toContain('AA battery');
+  await expect(page.getByText(/Practice rounds are random and unlimited/)).toBeVisible();
+  const second = await practiceOnce();
+  const third = await practiceOnce();
+  expect(second).not.toBe(first);
+  expect(third).not.toBe(second);
+  await expect(page.getByRole('button', { name: "Play today's Misfit" })).toBeVisible(); // daily untouched
+});

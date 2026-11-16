@@ -16,9 +16,9 @@ export function loadSession(store: Store, c: Catalog, mode: Mode, date: string, 
     return { status: 'problem' };
   }
   // A saved run keeps the seed it started with; `seed` only applies to a new run.
-  const content = mode === 'daily' ? getDaily(c, date, today, loaded.run?.seed || seed) : getPractice(c);
+  const content = mode === 'daily' ? getDaily(c, date, today, loaded.run?.seed || seed) : getPractice(c, loaded.run ? loaded.run.seed : seed);
   if (!content.ok) return { status: 'unavailable' };
-  if (!loaded.run) return { status: 'none', scenes: content.scenes, puzzleKey: content.puzzleKey, seed: 'seed' in content ? String(content.seed) : '' };
+  if (!loaded.run) return { status: 'none', scenes: content.scenes, puzzleKey: content.puzzleKey, seed: content.seed };
   const run = loaded.run;
   const matches =
     run.puzzleKey === content.puzzleKey &&

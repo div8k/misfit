@@ -21,8 +21,10 @@ export interface Settings {
   sound: boolean;
   reduceMotion: boolean;
   variant: Variant;
+  /** True once the fixed teaching round has been finished; practice is random after that. */
+  practiced: boolean;
 }
-export const DEFAULT_SETTINGS: Settings = { sound: false, reduceMotion: false, variant: 'A' };
+export const DEFAULT_SETTINGS: Settings = { sound: false, reduceMotion: false, variant: 'A', practiced: false };
 
 export interface ActivePointer {
   mode: Mode;
@@ -55,7 +57,7 @@ export function isRunState(x: unknown): x is RunState {
   if (r.variant !== 'A' && r.variant !== 'B') return false;
   if (!isDateKey(r.date) || typeof r.puzzleKey !== 'string' || r.puzzleKey.length > 80) return false;
   if (typeof r.seed !== 'string' || !/^[a-z0-9]{0,16}$/.test(r.seed)) return false;
-  if ((r.mode === 'daily') !== (r.seed !== '')) return false;
+  if (r.mode === 'daily' && r.seed === '') return false;
   if (!Array.isArray(r.sceneRefs) || r.sceneRefs.length < 1 || r.sceneRefs.length > 5 || !r.sceneRefs.every((s) => typeof s === 'string')) return false;
   if (!Number.isInteger(r.round) || (r.round as number) < 0 || (r.round as number) >= r.sceneRefs.length) return false;
   if (!['identify', 'repair', 'reveal', 'results'].includes(r.phase as string)) return false;
@@ -181,6 +183,16 @@ export function createStore(backend: StorageLike | null, onError: (op: string) =
       if (p) write(ACTIVE, JSON.stringify(p));
       else remove(ACTIVE);
     },
+    /** Every completed daily result saved on this device, oldest first. */
+    completedRuns(): RunState[] {
+      const out: RunState[] = [];
+      for (const k of keys()) {
+        if (!k.startsWith(`${RUN}daily:`)) continue;
+        const r = loadRun('daily', k.slice(`${RUN}daily:`.length));
+        if (r.ok && r.run?.completed) out.push(r.run);
+      }
+      return out.sort((a, b) => (a.date < b.date ? -1 : 1));
+    },
     completedDates(): string[] {
       const out: string[] = [];
       for (const k of keys()) {
@@ -200,6 +212,7 @@ export function createStore(backend: StorageLike | null, onError: (op: string) =
           sound: p.sound === true,
           reduceMotion: p.reduceMotion === true,
           variant: p.variant === 'B' ? 'B' : 'A',
+          practiced: p.practiced === true,
         };
       } catch {
         return { ...DEFAULT_SETTINGS };

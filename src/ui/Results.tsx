@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Tracker } from '../engine/analytics.ts';
 import { formatMm, measured } from '../engine/geometry.ts';
-import { maxRoundPoints, roundPoints, summarize, verdictFor, verdictText } from '../engine/scoring.ts';
+import { maxRoundPoints, roundPoints, summarize, verdictFor, verdictText, type Career } from '../engine/scoring.ts';
 import { BANDS, bandIndex, buildChallengeUrl, buildShareText, roundPercents } from '../engine/share.ts';
 import type { ResolvedScene, RunState } from '../engine/types.ts';
 import { Board } from './Board.tsx';
@@ -14,6 +14,7 @@ interface Props {
   edition: number;
   dateLabel: string;
   streak: number;
+  career: Career;
   refreshLabel: string;
   isToday: boolean;
   claimed: number | null;
@@ -35,7 +36,7 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-export function Results({ run, edition, dateLabel, streak, refreshLabel, isToday, claimed, canReplay, siteBase, reduced, track, onReplay, onHome }: Props) {
+export function Results({ run, edition, dateLabel, streak, career, refreshLabel, isToday, claimed, canReplay, siteBase, reduced, track, onReplay, onHome }: Props) {
   const s = summarize(run.results, run.variant, run.sceneRefs.length);
   const shown = useCountUp(s.score, reduced ? 0 : 350);
   const [toast, setToast] = useState<string | null>(null);
@@ -194,6 +195,22 @@ export function Results({ run, edition, dateLabel, streak, refreshLabel, isToday
           <dd>
             {streak} {streak === 1 ? 'day' : 'days'}
           </dd>
+        </div>
+      </dl>
+
+      <h2 className="section">Your record on this device</h2>
+      <dl className="stats">
+        <div>
+          <dt>Games played</dt>
+          <dd>{career.played}</dd>
+        </div>
+        <div>
+          <dt>Average</dt>
+          <dd>{career.averagePercent}%</dd>
+        </div>
+        <div>
+          <dt>Best</dt>
+          <dd>{career.bestPercent}%</dd>
         </div>
       </dl>
 

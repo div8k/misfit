@@ -62,6 +62,13 @@ scripts/        Content validator CLI
 
 **Scoring.** 40 points for spotting the misfit, up to 60 for the repair. With `r = submitted / true` and `e = max(0, |ln r| − ln 1.05)`, repair points are `round(60 · exp(−3e))`. Full credit on the multiplicative interval [1/1.05, 1.05] ("roughly within 5%"). The slider is logarithmic, 0.4×–2.5× of the size first shown, in steps of about 0.5%, and always starts at 1×.
 
+## Small things that came from the research
+
+- **Unlimited practice.** The first practice is the fixed teaching round; every one after that is a fresh random round. Practice never touches the daily score or streak.
+- **Score so far** is shown under the board from round two, so the total is not a surprise at the end.
+- **A personal record** on the results screen: games played, average and best, from the results saved on this device.
+- **Number keys 1–4** pick an object while identifying.
+
 ## Random games
 
 When a player starts the day's game, the app draws a random seed (from the browser's cryptographic random source) and saves it with their run. The generator in `src/engine/schedule.ts` turns `date + seed` into five rounds:
@@ -99,9 +106,9 @@ Run on 15 November 2026, macOS, Node 26.13, Chromium (Playwright headless).
 | Check | Result |
 |---|---|
 | `npm run typecheck` | Pass |
-| `npm test` | 40/40 pass, five consecutive runs |
-| `npm run test:e2e` | 29/29 pass, three consecutive runs each (28 desktop Chromium, 1 touch-emulated phone) |
-| `npm run test:e2e:build` | 29/29 pass, two consecutive runs each, against the production build with its security policy |
+| `npm test` | 42/42 pass |
+| `npm run test:e2e` | 31/31 pass (30 desktop Chromium, 1 touch-emulated phone) |
+| `npm run test:e2e:build` | 31/31 pass against the production build with its security policy |
 | `npm run validate:content` | Pass; 60 objects, 6 hand-made scenes, 180/180 date+seed combinations generate |
 | `npm run validate:content -- --public` | Pass: all 60 objects are marked verified (a unit test confirms one unverified object still blocks publication) |
 | `npm run build` | Pass. JS 303 kB raw, **95.9 kB gzip** (target < 200 kB); CSS 4.2 kB gzip; fonts 37–41 kB each for the Latin subsets |
