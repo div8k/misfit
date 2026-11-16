@@ -1,7 +1,8 @@
 // Core data types. Nothing in src/engine or src/content imports React.
 
 export type Measure = 'width' | 'height' | 'diameter';
-export type VerificationStatus = 'verified' | 'unverified';
+/** verified: checked against the cited source. typical: no official size exists; an honest estimate. unverified: not checked yet. */
+export type VerificationStatus = 'verified' | 'typical' | 'unverified';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type Mode = 'daily' | 'practice';
 /** A = identify then repair. B = resize a target that is already identified. */

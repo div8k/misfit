@@ -13,8 +13,8 @@ const o = (
   id: string, label: string, noun: string, widthMm: number, heightMm: number, measure: Measure,
   art: string, definition: string, sourceShortName: string, page: string, notes: string,
 ): GameObject =>
-  make({ id, label, noun, widthMm, heightMm, measure, art, definition, sourceShortName, notes,
-    sourceTitle: `${page.replace(/_/g, ' ')} — Wikipedia`, sourceUrl: `https://en.wikipedia.org/wiki/${page}` });
+  ({ ...make({ id, label, noun, widthMm, heightMm, measure, art, definition, sourceShortName, notes,
+    sourceTitle: `${page.replace(/_/g, ' ')} — Wikipedia`, sourceUrl: `https://en.wikipedia.org/wiki/${page}` }), retrieved: '2026-11-16' });
 
 const S = inch(30);
 const A = +(S * 0.2929).toFixed(1);

@@ -50,7 +50,7 @@ export function validateObject(o: GameObject): Issue[] {
   if (!text(o.sourceUrl) || !/^https?:\/\/[^\s"'<>]+\.[^\s"'<>]+$/.test(o.sourceUrl)) err('object.sourceUrl', 'Missing or invalid source URL');
   if (!text(o.artAuthor) || !text(o.artLicense)) err('object.artMeta', 'Missing illustration author or licence');
   if (!/^#[0-9A-Fa-f]{6}$/.test(o.color ?? '') || (o.tone !== 'light' && o.tone !== 'dark')) err('object.color', 'Colour must be #RRGGBB with a light or dark tone');
-  if (o.status !== 'verified' && o.status !== 'unverified') err('object.status', 'Unknown verification status');
+  if (!['verified', 'typical', 'unverified'].includes(o.status)) err('object.status', 'Unknown verification status');
   if (o.retrieved !== null && !isDateKey(o.retrieved)) err('object.retrieved', 'Retrieved date must be YYYY-MM-DD or null');
   if (o.status === 'verified' && o.retrieved === null) err('object.verified', 'Verified objects need a retrieved date');
   return out;
@@ -107,7 +107,8 @@ export function validateScene(scene: Scene, objects: Record<string, GameObject>)
 
 export function sceneIsVerified(scene: Scene | ResolvedScene, objects: Record<string, GameObject>): boolean {
   const ids = 'objectIds' in scene ? scene.objectIds : scene.objects.map((o) => o.id);
-  return ids.every((id) => objects[id]?.status === 'verified');
+  // 'typical' objects are allowed: they are honest estimates and are labelled as such in play.
+  return ids.every((id) => objects[id] && objects[id].status !== 'unverified');
 }
 
 export function validateManifest(

@@ -2,6 +2,7 @@ import type { GameObject } from '../engine/types.ts';
 import { ball, inch, make } from './make.ts';
 import { EVERYDAY_OBJECTS } from './objects-everyday.ts';
 import { EXTRA_OBJECTS } from './objects-extra.ts';
+import { WIDE_OBJECTS } from './objects-wide.ts';
 import { MORE_OBJECTS } from './objects-more.ts';
 
 // OBJECT CATALOGUE
@@ -305,8 +306,10 @@ const RETIRED = new Set([
   'aa-battery', 'nine-volt', 'aaa-battery', 'c-battery', 'd-battery', 'racquetball', 'carom-ball',
   'minidisc', 'betamax', 'compactflash', 'laserdisc', 'ten-inch-record', 'sim-card',
   'fifty-pence', 'sliotar', 'futsal-ball', 'floorball', 'bandy-ball', 'takraw-ball', 'duckpin-ball',
+  // Too much Apple: these went on 16 November 2026. The iPhone 15, iPad, AirTag and AirPods case stay.
+  'iphone-se', 'iphone-16-pm', 'ipad-mini', 'ipad-pro-13', 'magic-keyboard', 'mac-mini', 'homepod-mini', 'magic-mouse',
 ]);
 
 export const OBJECTS: Record<string, GameObject> = Object.fromEntries(
-  [...list, ...MORE_OBJECTS, ...EVERYDAY_OBJECTS, ...EXTRA_OBJECTS].filter((o) => !RETIRED.has(o.id)).map((o) => [o.id, o]),
+  [...list, ...MORE_OBJECTS, ...EVERYDAY_OBJECTS, ...EXTRA_OBJECTS, ...WIDE_OBJECTS].filter((o) => !RETIRED.has(o.id)).map((o) => [o.id, o]),
 );

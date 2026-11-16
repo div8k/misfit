@@ -39,7 +39,7 @@ const siteBase = import.meta.env.PUBLIC_SITE_URL || location.origin + location.p
 const params = new URLSearchParams(location.search);
 const challenge = parseChallenge(location.search, location.hash);
 const playtest = import.meta.env.DEV || params.has('playtest');
-const demoContent = Object.values(CATALOG.objects).some((o) => o.status !== 'verified');
+const demoContent = Object.values(CATALOG.objects).some((o) => o.status === 'unverified');
 
 declare global {
   interface Window {
@@ -106,6 +106,8 @@ export default function App() {
   const [notice, setNotice] = useState<string | null>(initial.notice);
   const [overlay, setOverlay] = useState<null | 'help' | 'settings'>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  // Opening screen: the big wordmark and the one rule of the game. Shown when arriving at the start page.
+  const [splash, setSplash] = useState<'show' | 'leaving' | 'gone'>(initial.view === 'intro' ? 'show' : 'gone');
   const reduced = usePrefersReducedMotion() || settings.reduceMotion;
   const soundRef = useRef(settings.sound);
   useEffect(() => {
@@ -262,6 +264,13 @@ export default function App() {
     window.setTimeout(() => URL.revokeObjectURL(url), 5000);
   };
 
+  const begin = () => {
+    if (splash !== 'show') return;
+    if (reduced) return setSplash('gone');
+    setSplash('leaving'); // the wordmark shrinks into the corner, where the header wordmark sits
+    window.setTimeout(() => setSplash('gone'), 520);
+  };
+
   const run = session?.run ?? null;
   const edition = editionFor(run?.date ?? targetDate, CATALOG.epoch);
   const dateLabel = formatDateLabel(run?.date ?? targetDate);
@@ -280,8 +289,34 @@ export default function App() {
           ? "Play today's Misfit"
           : `Play Misfit #${edition}`;
 
+  const splashScreen = splash !== 'gone' && (
+    <div className={`splash ${splash === 'leaving' ? 'is-leaving' : ''}`}>
+      <div className="splash-inner">
+        <p className="splash-mark" aria-label="Misfit">
+          <span aria-hidden="true">
+            MISF<span className="tall-i">I</span>T
+          </span>
+        </p>
+        <p className="rule rule-big">
+          <span className="rule-three">Three are to scale.</span> <span className="rule-one">One isn't.</span>
+        </p>
+        {tutorial && (
+          <div className="teaser" aria-hidden="true">
+            <Board scene={tutorial} phase="preview" idPrefix="splash" />
+          </div>
+        )}
+        <p className="splash-sub">Find the misfit. Fix its size.</p>
+        <button type="button" className="btn btn-primary splash-go" onClick={begin} autoFocus>
+          Tap to begin
+        </button>
+      </div>
+    </div>
+  );
+  if (splash === 'show') return splashScreen;
+
   return (
     <div className="app">
+      {splashScreen}
       <header className="header">
         <button type="button" className="home" onClick={goHome} aria-label="Misfit — back to start">
           <Wordmark />
@@ -316,6 +351,17 @@ export default function App() {
         <main className="intro">
           <h1 className="intro-title">Something doesn't add up.</h1>
           <p className="intro-sub">Four objects. One wrong size. Find it. Fix it.</p>
+          <ol className="steps">
+            <li>
+              <b>1</b> Spot the one that is the wrong size
+            </li>
+            <li>
+              <b>2</b> Drag to fix it
+            </li>
+            <li>
+              <b>3</b> See how close you were
+            </li>
+          </ol>
           {tutorial && (
             <div className="teaser" aria-hidden="true">
               <Board scene={tutorial} phase="preview" idPrefix="teaser" />

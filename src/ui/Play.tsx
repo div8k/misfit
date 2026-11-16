@@ -68,7 +68,11 @@ export function Play({ run, scenes, act, heading, reduced }: Props) {
   let sub: React.ReactNode;
   if (phase === 'identify') {
     title = 'Which one is the wrong size?';
-    sub = "Three are to scale. One isn't.";
+    sub = (
+      <span className="rule">
+        <span className="rule-three">Three are to scale.</span> <span className="rule-one">One isn't.</span>
+      </span>
+    );
   } else if (phase === 'repair') {
     title = `Resize the ${misfit.noun} until it belongs.`;
     sub =
@@ -181,7 +185,8 @@ export function Play({ run, scenes, act, heading, reduced }: Props) {
                   <a href={misfit.sourceUrl} target="_blank" rel="noreferrer noopener">
                     {misfit.sourceTitle}
                   </a>
-                  {misfit.status !== 'verified' && ' — demo measurement, not yet checked against the primary source.'}
+                  {misfit.status === 'unverified' && ' — demo measurement, not yet checked against the primary source.'}
+                  {misfit.status === 'typical' && ' — typical size: an estimate, not an official standard.'}
                 </p>
               </details>
             </div>

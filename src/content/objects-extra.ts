@@ -12,8 +12,8 @@ const o = (
   id: string, label: string, noun: string, widthMm: number, heightMm: number, measure: Measure,
   art: string, definition: string, sourceShortName: string, page: string, notes: string,
 ): GameObject =>
-  make({ id, label, noun, widthMm, heightMm, measure, art, definition, sourceShortName, notes,
-    sourceTitle: `${decodeURIComponent(page).replace(/_/g, ' ')} — Wikipedia`, sourceUrl: `https://en.wikipedia.org/wiki/${page}` });
+  ({ ...make({ id, label, noun, widthMm, heightMm, measure, art, definition, sourceShortName, notes,
+    sourceTitle: `${decodeURIComponent(page).replace(/_/g, ' ')} — Wikipedia`, sourceUrl: `https://en.wikipedia.org/wiki/${page}` }), retrieved: '2026-11-16' });
 
 const R = (w: number, h: number, rx: number) => `<rect width="${f(w)}" height="${f(h)}" rx="${f(rx)}"/>`;
 const C = (x: number, y: number, w: number, h: number, rx = 1) => `<rect class="d" x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" rx="${f(rx)}"/>`;

@@ -2,7 +2,7 @@
 
 **Four objects. One wrong size. Find it. Fix it.**
 
-A mobile-first daily browser game. Every player gets their own randomly drawn game each day, from a pool of 15,009,331 possible rounds. Each of five rounds shows four objects drawn at one shared physical scale. Three are true to size; one has been enlarged or shrunk. Pick the suspect, then resize the real misfit, then watch the true size slide in over your dashed estimate. Score out of 500, with a spoiler-free result to share.
+A mobile-first daily browser game. Every player gets their own randomly drawn game each day, from a pool of 38,635,729 possible rounds. Each of five rounds shows four objects drawn at one shared physical scale. Three are true to size; one has been enlarged or shrunk. Pick the suspect, then resize the real misfit, then watch the true size slide in over your dashed estimate. Score out of 500, with a spoiler-free result to share.
 
 "MISFIT" is a working title, not a cleared brand. This is a **prototype**: the source is public, but the game is not deployed anywhere, no analytics leave the device, and there are no accounts, ads or payments.
 
@@ -73,6 +73,13 @@ scripts/        Content validator CLI
 - **110 objects in play.** Forty-three more familiar things were added (phones, tablets, games consoles and controllers, Canadian coins and a $5 note, a playing card, a Rubik's Cube, a Barbie doll, an American football, a rugby ball, a basketball hoop, an oil drum, a beer keg, a pallet and three famous trophies), and thirteen of the earlier retirements that are reasonably familiar were brought back (euro coins and notes, the brick, the EU plate, the Blu-ray case, the 7-inch single and four sports balls). Twenty stay retired. For the doll and the trophies only the height is documented; the notes on those objects say so.
 - **Shading.** Every object now has a highlight, edge shading and a contact shadow, clipped to its own shape, so it reads as a solid thing. Balls get a spherical highlight. These are still illustrations, not photographs.
 
+### 166 objects, less Apple, and an opening screen
+
+- **166 objects in play.** Sixty-four were added and eight Apple products retired (the iPhone 15, iPad, AirTag and AirPods case remain). New ones include a 21-inch car wheel, a car tyre, seven cars in side view, a shipping container, pizzas, a footlong sub, TV and monitor screens, Samsung and Google phones, a hockey goal, a table tennis table, a snooker table, an Oscar, the FA Cup, a carry-on suitcase, larger paper sizes, and money from the UK, Japan and the euro area.
+- **Three kinds of size, labelled on each object.** *Checked*: a script fetched the cited page and matched the figures. *By name*: the size is part of the name (a 21-inch wheel, a 12-inch pizza, a 55-inch screen) and follows from arithmetic. *Typical*: no official size exists, so the figure is an estimate, stored with `status: 'typical'` and shown on the reveal as "typical size: an estimate, not an official standard". Six objects are typical: the house key, tissue box, plastic water bottle, Costco hot dog, baguette and hula hoop. For the Costco hot dog the only published spec is its weight.
+- **Opening screen.** Arriving at the start page shows a large MISFIT wordmark, the rule "Three are to scale. One isn't.", a sample exhibit and "Tap to begin"; the wordmark then shrinks into the corner. A game in progress skips it.
+- **The rule is hard to miss.** "Three are to scale" (green) and "One isn't" (red) now appear as two bold pills above every identify round, and the start page lists the three steps.
+
 ## Small things that came from the research
 
 - **Unlimited practice.** The first practice is the fixed teaching round; every one after that is a fresh random round. Practice never touches the daily score or streak.
@@ -88,7 +95,7 @@ When a player starts the day's game, the app draws a random seed (from the brows
 - Every candidate round goes through the same validator as hand-made scenes, so the misfit can always be fixed inside the slider, stays inside its cell, and stays legible at 320 px.
 - No object appears twice in a game: the five rounds show twenty different objects. The hand-made demonstration set follows the same rule.
 
-`npm run count:pool` enumerates the whole space: **983,523 fair groups of four objects and 15,009,331 distinct valid rounds**. A game is five of those, so two players getting the same game by chance is very unlikely (2,000 consecutive test seeds gave 2,000 different games, and across 3,000 games every one of the 110 objects appeared and took a turn as the misfit).
+`npm run count:pool` enumerates the whole space: **2,543,021 fair groups of four objects and 38,635,729 distinct valid rounds**. A game is five of those, so two players getting the same game by chance is very unlikely (2,000 consecutive test seeds gave 2,000 different games, and across 3,000 games every one of the 166 objects appeared and took a turn as the misfit).
 
 One honest caveat. This is a deliberate departure from the original brief, which had everyone play the same five rounds each day: scores are now only directly comparable between a player and the friends who open their challenge link, which carries the seed.
 
@@ -117,11 +124,11 @@ Run on 15 November 2026, macOS, Node 26.13, Chromium (Playwright headless).
 | Check | Result |
 |---|---|
 | `npm run typecheck` | Pass |
-| `npm test` | 44/44 pass |
-| `npm run test:e2e` | 31/31 pass (30 desktop Chromium, 1 touch-emulated phone) |
-| `npm run test:e2e:build` | 31/31 pass against the production build with its security policy |
-| `npm run validate:content` | Pass; 110 objects, 6 hand-made scenes, 180/180 date+seed combinations generate |
-| `npm run validate:content -- --public` | Pass: all 110 objects are marked verified (a unit test confirms one unverified object still blocks publication) |
+| `npm test` | 45/45 pass |
+| `npm run test:e2e` | 32/32 pass (31 desktop Chromium, 1 touch-emulated phone) |
+| `npm run test:e2e:build` | 32/32 pass against the production build with its security policy |
+| `npm run validate:content` | Pass; 166 objects, 6 hand-made scenes, 180/180 date+seed combinations generate |
+| `npm run validate:content -- --public` | Pass: no object is unverified (160 checked or by-name, 6 typical) (a unit test confirms one unverified object still blocks publication) |
 | `npm run build` | Pass. JS about 330 kB raw, **about 104 kB gzip** (target < 200 kB); CSS 4.2 kB gzip; fonts 37–41 kB each for the Latin subsets |
 | `npm audit` | 0 vulnerabilities |
 
@@ -150,7 +157,7 @@ How the brief's ten test areas are covered:
 
 ## Content: what is real and what is not
 
-There are **110 objects in play**, each with original SVG artwork drawn for this project: coins, batteries, sports balls, tapes and discs, cards, paper, banknotes, number plates and a few household standards. The fixture gallery (`/?gallery`) ends with a contact sheet of all of them. There are also five handcrafted demo scenes plus one tutorial scene.
+There are **166 objects in play**, each with original SVG artwork drawn for this project: coins, batteries, sports balls, tapes and discs, cards, paper, banknotes, number plates and a few household standards. The fixture gallery (`/?gallery`) ends with a contact sheet of all of them. There are also five handcrafted demo scenes plus one tutorial scene.
 
 **Measurements: checked on 15 November 2026 against their cited sources.** For each object, the source page was retrieved and the size read from it. Of the first 19, sixteen matched as entered. Four were corrected to match: the cassette shell (now 101.6 × 63.5 mm), the 12-inch LP (now the nominal 304.8 mm), the Ultimate disc (now 273 mm, and its source link was repointed to the page that states it), and the bowling pin's width (now 120.65 mm). The other 41 objects were added afterwards, each entered directly from its source page; candidates whose page gave no clear figure (softball, playing card, 8-track cartridge, rugby ball and others) were left out rather than guessed. Each object records `status: 'verified'` and the date, and the "Demo measurements" banner, which appears whenever any object is unverified, no longer shows.
 
@@ -158,7 +165,7 @@ The limit of that check: the cited pages are Wikipedia summaries of the standard
 
 Several objects are defined by a permitted range rather than a single number (AA battery and most of the sports balls); the notes say which value is drawn, and the whole range sits inside full credit. The LP is drawn at its nominal size, which real pressings fall slightly under.
 
-The five hand-made scenes are kept as the curated demonstration set (`/?g=demo`) and as fixtures for the tests and gallery. What players actually get each day is a generated game, described under "Random games" above. Generated rounds have a factual, formulaic explanation rather than an edited one, and nobody has reviewed each of the 15,009,331 combinations by hand.
+The five hand-made scenes are kept as the curated demonstration set (`/?g=demo`) and as fixtures for the tests and gallery. What players actually get each day is a generated game, described under "Random games" above. Generated rounds have a factual, formulaic explanation rather than an edited one, and nobody has reviewed each of the 38,635,729 combinations by hand.
 
 ### Adding or editing content
 
@@ -171,8 +178,8 @@ Content checklist per scene: Is every object a standard or a named model, not a 
 
 ## Genuine launch blockers
 
-1. **Measurements are verified only against secondary sources.** All 110 objects match their cited Wikipedia pages; a commercial launch should re-check them against the primary standards.
-2. **Editorial quality.** The generator gives 15,009,331 rounds from 110 objects, but nobody has reviewed them individually. A public launch would benefit from edited sets (the brief asked for 30 daily sets, 150 scenes) alongside the generated ones.
+1. **Measurements are verified only against secondary sources.** The checked objects match their cited Wikipedia pages; a commercial launch should re-check them against the primary standards.
+2. **Editorial quality.** The generator gives 38,635,729 rounds from 166 objects, but nobody has reviewed them individually. A public launch would benefit from edited sets (the brief asked for 30 daily sets, 150 scenes) alongside the generated ones.
 3. **No evidence yet that the game is fun.** Run the comprehension test and the A/B comparison (variant B is built in) before investing further.
 4. **Trusted time and scores.** The daily uses the device clock and scores are computed in the browser; a public competition needs server time and server-side checking.
 5. **Name and domain.** "MISFIT" has not been checked as a brand or domain.

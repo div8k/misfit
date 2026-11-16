@@ -387,7 +387,10 @@ describe('8. invalid content and storage problems', () => {
     const m = { ...CATALOG.manifests[0], status: 'public' as const };
     // every object has been checked against its source, so the real catalogue is publishable
     expect(hasErrors(validateManifest(m, CATALOG.scenes, CATALOG.objects))).toBe(false);
-    expect(Object.values(CATALOG.objects).every((o) => o.status === 'verified' && o.retrieved === '2026-11-15')).toBe(true);
+    for (const o of Object.values(CATALOG.objects)) {
+      if (o.status === 'verified') expect(o.retrieved).toMatch(/^2026-11-1[56]$/);
+      else expect(o.status).toBe('typical');
+    }
     // one unverified object is enough to block every scene that uses it
     const objects = { ...CATALOG.objects, cd: { ...CATALOG.objects.cd, status: 'unverified' as const, retrieved: null } };
     const issues = validateManifest(m, CATALOG.scenes, objects);
@@ -680,6 +683,20 @@ it('easier scoring: full credit within roughly 10%, and a gentler fall-off', () 
   expect(repairPointsForRatio(1 / 1.1)).toBe(60);
   expect(repairPointsForRatio(1.25)).toBeGreaterThanOrEqual(45);
   expect(repairPointsForRatio(1.5)).toBeGreaterThanOrEqual(30);
+});
+
+it('typical-size objects are labelled as estimates, and Apple no longer dominates', () => {
+  const all = Object.values(CATALOG.objects);
+  expect(all.length).toBeGreaterThanOrEqual(160);
+  const typical = all.filter((o) => o.status === 'typical');
+  expect(typical.map((o) => o.id).sort()).toEqual(['baguette', 'costco-hot-dog', 'house-key', 'hula-hoop', 'tissue-box', 'water-bottle']);
+  for (const o of typical) {
+    expect(o.retrieved).toBeNull();
+    expect(o.notes).toMatch(/^TYPICAL/);
+  }
+  expect(all.every((o) => o.status !== 'unverified')).toBe(true);
+  expect(all.filter((o) => /apple|iphone|ipad|airpods|airtag|mac/i.test(o.label)).length).toBeLessThanOrEqual(4);
+  for (const id of ['car-wheel-21', 'house-key', 'tissue-box', 'water-bottle', 'costco-hot-dog', 'credit-card']) expect(CATALOG.objects[id]).toBeDefined();
 });
 
 it('measured dimension follows the object definition', () => {

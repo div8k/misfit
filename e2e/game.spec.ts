@@ -24,6 +24,13 @@ test.afterEach(() => {
 async function open(page: Page, at = DAY1, path = DEMO) {
   await page.clock.setFixedTime(at);
   await page.goto(path);
+  // Arriving at the start page shows the opening screen first; tap through it.
+  await page.locator('.splash, .app').first().waitFor();
+  const begin = page.getByRole('button', { name: 'Tap to begin' });
+  if (await begin.count()) {
+    await begin.click();
+    await page.locator('.splash').waitFor({ state: 'detached' });
+  }
 }
 
 const cell = (page: Page, label: string) => page.getByRole('button', { name: label, exact: true });
@@ -544,4 +551,25 @@ test('practice is the teaching round once, then random and unlimited', async ({ 
   expect(second).not.toBe(first);
   expect(third).not.toBe(second);
   await expect(page.getByRole('button', { name: "Play today's Misfit" })).toBeVisible(); // daily untouched
+});
+
+test('opening screen states the rule, then hands over to the start page', async ({ page }) => {
+  await page.clock.setFixedTime(DAY1);
+  await page.goto(DEMO);
+  await expect(page.locator('.splash-mark')).toBeVisible();
+  await expect(page.locator('.splash')).toContainText("Three are to scale. One isn't.");
+  const size = await page.locator('.splash-mark').evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+  expect(size).toBeGreaterThanOrEqual(76); // much bigger than the 28–32px corner wordmark
+  await expect(page.getByRole('button', { name: "Play today's Misfit" })).toHaveCount(0);
+  await page.keyboard.press('Enter'); // the begin button has focus
+  await expect(page.locator('.splash')).toHaveCount(0);
+  await expect(page.locator('.header .wordmark')).toBeVisible();
+  await expect(page.getByText('Spot the one that is the wrong size')).toBeVisible();
+  await noOverflow(page);
+  // a run in progress skips the opening screen on reload
+  await page.getByRole('button', { name: "Play today's Misfit" }).click();
+  await expect(page.locator('.rule')).toContainText("Three are to scale. One isn't.");
+  await page.reload();
+  await expect(page.locator('.splash')).toHaveCount(0);
+  await expect(page.getByText('Round 1 of 5')).toBeVisible();
 });
