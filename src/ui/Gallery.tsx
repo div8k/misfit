@@ -102,7 +102,7 @@ export function Gallery() {
         {Object.values(CATALOG.objects).map((o) => (
           <figure key={o.id}>
             <svg className="draw" viewBox={`${-o.widthMm * 0.06} ${-o.heightMm * 0.06} ${o.widthMm * 1.12} ${o.heightMm * 1.12}`} aria-hidden="true">
-              <g className="art" dangerouslySetInnerHTML={{ __html: o.art }} />
+              <g className={`art tone-${o.tone}`} style={{ color: o.color }} dangerouslySetInnerHTML={{ __html: o.art }} />
             </svg>
             <figcaption>
               {o.label}

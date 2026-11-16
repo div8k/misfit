@@ -74,8 +74,8 @@ describe('1. scoring', () => {
     expect(repairPointsForRatio(1 / TOLERANCE)).toBe(60);
     expect(repairPointsForRatio(1.0499)).toBe(60);
     // Just outside the interval the score has started to fall (visible once rounding allows).
-    expect(repairPointsForRatio(1.07)).toBeLessThan(60);
-    expect(repairPointsForRatio(1 / 1.07)).toBeLessThan(60);
+    expect(repairPointsForRatio(1.2)).toBeLessThan(60);
+    expect(repairPointsForRatio(1 / 1.2)).toBeLessThan(60);
     expect(verdictText(verdictFor(1.05))).toBe('Right on scale');
     expect(verdictText(verdictFor(1.5))).toBe('50% too big');
     expect(verdictText(verdictFor(0.75))).toBe('25% too small');
@@ -132,7 +132,7 @@ describe('2. schedule is deterministic', () => {
 
   it('has well over 1,000 distinct valid rounds to draw from, and uses the whole catalogue', () => {
     const ids = Object.keys(CATALOG.objects).sort();
-    expect(ids.length).toBeGreaterThanOrEqual(60);
+    expect(ids.length).toBeGreaterThanOrEqual(50);
     // sample the space rather than enumerating all ~1.1 million rounds on every test run
     const rand = rng('pool-sample');
     let valid = 0;
@@ -372,13 +372,13 @@ describe('8. invalid content and storage problems', () => {
   it('rejects malformed scenes', () => {
     const s = CATALOG.scenes['desk-drawer'];
     const bad = [
-      { ...s, objectIds: ['credit-card', 'credit-card', 'aa-battery', 'nine-volt'] },
+      { ...s, objectIds: ['post-it', 'post-it', 'us-quarter', 'jenga-block'] },
       { ...s, misfitId: 'cd' },
       { ...s, distortion: 1.02 },
       { ...s, distortion: 2.4 },
       { ...s, distortion: NaN },
       { ...s, layout: { extentMm: 60 } },
-      { ...s, objectIds: ['credit-card', 'sd-card', 'aa-battery', 'vinyl-lp'] },
+      { ...s, objectIds: ['post-it', 'sd-card', 'us-quarter', 'vinyl-lp'] },
     ];
     for (const scene of bad) expect(hasErrors(validateScene(scene as typeof s, CATALOG.objects))).toBe(true);
   });
@@ -664,7 +664,25 @@ it('career stats average across saved games', () => {
   expect(career([run, b])).toEqual({ played: 2, averagePercent: 80, bestPercent: 100 });
 });
 
+it('every object has a realistic colour and niche objects are retired', () => {
+  for (const o of Object.values(CATALOG.objects)) {
+    expect(o.color).toMatch(/^#[0-9A-F]{6}$/i);
+    expect(['light', 'dark']).toContain(o.tone);
+  }
+  // not everything is the same colour
+  expect(new Set(Object.values(CATALOG.objects).map((o) => o.color)).size).toBeGreaterThan(20);
+  for (const id of ['aa-battery', 'nine-volt', 'c-battery', 'carom-ball', 'sim-card']) expect(CATALOG.objects[id]).toBeUndefined();
+  for (const id of ['iphone-15', 'ipad-10', 'crayon', 'post-it', 'stop-sign', 'game-boy']) expect(CATALOG.objects[id]).toBeDefined();
+});
+
+it('easier scoring: full credit within roughly 10%, and a gentler fall-off', () => {
+  expect(repairPointsForRatio(1.1)).toBe(60);
+  expect(repairPointsForRatio(1 / 1.1)).toBe(60);
+  expect(repairPointsForRatio(1.25)).toBeGreaterThanOrEqual(45);
+  expect(repairPointsForRatio(1.5)).toBeGreaterThanOrEqual(30);
+});
+
 it('measured dimension follows the object definition', () => {
-  expect(measured(CATALOG.objects['aa-battery'])).toBe(50.5);
+  expect(measured(CATALOG.objects['iphone-15'])).toBe(147.6);
   expect(measured(CATALOG.objects['credit-card'])).toBe(85.6);
 });

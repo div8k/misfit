@@ -1,10 +1,12 @@
 import type { RoundResult, Variant } from './types.ts';
 
-export const SCORING_VERSION = 1;
+export const SCORING_VERSION = 2;
 export const ID_POINTS = 40;
 export const REPAIR_POINTS = 60;
-/** Full credit inside the multiplicative interval [1/1.05, 1.05]. */
-export const TOLERANCE = 1.05;
+/** Full credit inside the multiplicative interval [1/1.10, 1.10]. */
+export const TOLERANCE = 1.1;
+/** How quickly points fall away outside the tolerance (gentler than the original 3). */
+export const DECAY = 2;
 
 // Slider: multiplier = exp(t), t in [ln 0.4, ln 2.5], symmetric around 0.
 export const T_MAX = Math.log(2.5);
@@ -44,7 +46,7 @@ export function repairPointsForRatio(r: number): number {
   assertPositive(r, 'ratio');
   // Tiny epsilon so the interval ends themselves earn full credit despite float error.
   const e = Math.max(0, Math.abs(Math.log(r)) - Math.log(TOLERANCE) - 1e-12);
-  const pts = Math.round(REPAIR_POINTS * Math.exp(-3 * e));
+  const pts = Math.round(REPAIR_POINTS * Math.exp(-DECAY * e));
   return Math.min(REPAIR_POINTS, Math.max(0, pts));
 }
 

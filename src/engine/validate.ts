@@ -38,7 +38,7 @@ export function validateObject(o: GameObject): Issue[] {
     err('object.dimensions', 'True width and height must be positive');
   } else {
     const aspect = o.widthMm / o.heightMm;
-    if (aspect > 8 || aspect < 1 / 8) err('object.aspect', 'Aspect ratio outside 1:8 – 8:1');
+    if (aspect > 12 || aspect < 1 / 12) err('object.aspect', 'Aspect ratio outside 1:12 – 12:1');
     if (out.length === 0) {
       const artAspect = (o.viewBox[2] * b.w) / (o.viewBox[3] * b.h);
       if (Math.abs(artAspect / aspect - 1) > 0.01) err('object.artAspect', 'Artwork proportions do not match the true dimensions');
@@ -49,6 +49,7 @@ export function validateObject(o: GameObject): Issue[] {
   if (!text(o.sourceTitle) || !text(o.sourceShortName)) err('object.source', 'Missing source title');
   if (!text(o.sourceUrl) || !/^https?:\/\/[^\s"'<>]+\.[^\s"'<>]+$/.test(o.sourceUrl)) err('object.sourceUrl', 'Missing or invalid source URL');
   if (!text(o.artAuthor) || !text(o.artLicense)) err('object.artMeta', 'Missing illustration author or licence');
+  if (!/^#[0-9A-Fa-f]{6}$/.test(o.color ?? '') || (o.tone !== 'light' && o.tone !== 'dark')) err('object.color', 'Colour must be #RRGGBB with a light or dark tone');
   if (o.status !== 'verified' && o.status !== 'unverified') err('object.status', 'Unknown verification status');
   if (o.retrieved !== null && !isDateKey(o.retrieved)) err('object.retrieved', 'Retrieved date must be YYYY-MM-DD or null');
   if (o.status === 'verified' && o.retrieved === null) err('object.verified', 'Verified objects need a retrieved date');

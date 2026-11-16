@@ -76,6 +76,25 @@ function euroNote(w: number, h: number): string {
   );
 }
 
+/** Portrait sheet of paper with a folded corner and a few lines of text. */
+function sheet(w: number, h: number, t: number): string {
+  const c = w * 0.19;
+  const rows = [0.24, 0.34, 0.44, 0.54].map((k, i) => cut(w * 0.13, h * k, w * (i === 3 ? 0.48 : 0.74), t, t / 2)).join('');
+  return `<path d="M0 0H${f(w - c)}L${f(w)} ${f(c)}V${f(h)}H0Z"/>` + line(`M${f(w - c)} 0V${f(c)}H${f(w)}`, f(t * 0.45)) + rows;
+}
+/** Regular polygon stretched to fill a d × d box (for many-sided coins). */
+function ngon(n: number, d: number): string {
+  const raw = Array.from({ length: n }, (_, i) => {
+    const a = (2 * Math.PI * i) / n - Math.PI / 2;
+    return [Math.cos(a), Math.sin(a)];
+  });
+  const xs = raw.map((p) => p[0]);
+  const ys = raw.map((p) => p[1]);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const pts = raw.map(([x, y]) => `${f(((x - x0) / (x1 - x0)) * d)},${f(((y - y0) / (y1 - y0)) * d)}`).join(' ');
+  return `<polygon points="${pts}"/>`;
+}
+
 const D = {
   quarter: 24.26,
   penny: 19.05,
@@ -235,4 +254,53 @@ export const MORE_OBJECTS: GameObject[] = [
   obj('drink-can', 'US 12 oz drink can', 'drink can', inch(2.6), inch(4.83), 'height',
     `<path d="M9 0H57L66.04 13V114L59 122.68H7L0 114V13Z"/>` + line('M4 13H62M4 114H62', 1.2) + cut(26, 3.5, 14, 5, 2.5),
     'United States standard 12 US fl oz beverage can.', 'US standard drink can', 'Drink_can', '4.83 in tall and 2.6 in across at the widest point of the body, i.e. 122.7 × 66.0 mm. Height quoted.'),
+
+  // ---------- third batch (sizes read from the cited pages on 15 November 2026) ----------
+  obj('euro-20', '€20 note', 'twenty-euro note', 133, 72, 'width', euroNote(133, 72) + dot(133 * 0.82, 72 * 0.68, 72 * 0.08),
+    'Euro twenty-euro banknote.', 'ECB banknote sizes (€20)', 'Euro_banknotes', '133 × 72 mm. Width quoted.'),
+  obj('euro-50', '€50 note', 'fifty-euro note', 140, 77, 'width', euroNote(140, 77) + cut(140 * 0.74, 77 * 0.6, 140 * 0.16, 77 * 0.14, 2),
+    'Euro fifty-euro banknote.', 'ECB banknote sizes (€50)', 'Euro_banknotes', '140 × 77 mm. Width quoted.'),
+  obj('a5-sheet', 'A5 sheet of paper', 'A5 sheet', 148, 210, 'height', sheet(148, 210, 5),
+    'ISO 216 A5 sheet, portrait: half an A4.', 'ISO 216 (A5)', 'International_standard_paper_sizes', '148 × 210 mm. Height quoted.'),
+  obj('a6-sheet', 'A6 sheet of paper', 'A6 sheet', 105, 148, 'height', sheet(105, 148, 3),
+    'ISO 216 A6 sheet, portrait: a quarter of an A4, the usual postcard size.', 'ISO 216 (A6)', 'International_standard_paper_sizes', '105 × 148 mm. Height quoted.'),
+  obj('letter-sheet', 'US Letter sheet', 'US Letter sheet', inch(8.5), inch(11), 'height', sheet(inch(8.5), inch(11), 6),
+    'US Letter paper, portrait.', 'US Letter (8.5 × 11 in)', 'Letter_(paper_size)', '8.5 × 11 in, i.e. 215.9 × 279.4 mm: wider and shorter than A4. Height quoted.'),
+  obj('basketball-6', 'Basketball (size 6)', 'size 6 basketball', 230, 230, 'diameter',
+    ball(230, line('M115 0V230M0 115H230M33.7 33.7Q106 115 33.7 196.3M196.3 33.7Q124 115 196.3 196.3', 4)),
+    'Size 6 basketball (women’s official size).', 'FIBA rules (size 6)', 'Basketball_(ball)',
+    `A RANGE: circumference 715–730 mm, i.e. about ${(715 / Math.PI).toFixed(0)}–${(730 / Math.PI).toFixed(0)} mm across. 230 mm (mid-range) is used.`),
+  obj('fifty-pence', 'UK 50p coin', '50p coin', 27.3, 27.3, 'diameter', ngon(7, 27.3) + dot(13.65, 13.65, 6.2) + dot(13.65, 13.65, 3.4, 'i'),
+    'United Kingdom fifty pence coin (1997 onward), a seven-sided coin.', 'UK 50p specification', 'Fifty_pence_(British_coin)', '27.3 mm across. Its curved seven-sided shape has the same width in every direction.'),
+  obj('loonie', 'Canadian $1 coin', 'Canadian dollar coin', 26.5, 26.5, 'diameter', ngon(11, 26.5) + `<ellipse class="d" cx="13.25" cy="14.2" rx="6.4" ry="3.3"/>` + dot(18.6, 10.6, 1.7),
+    'Canadian one-dollar coin ("loonie"), eleven-sided.', 'Canadian $1 coin specification', 'Loonie', '26.5 mm in diameter.'),
+  obj('toonie', 'Canadian $2 coin', 'Canadian two-dollar coin', 28, 28, 'diameter', ball(28, ring(28, 0.6, 1) + dot(14, 14, 3.2)),
+    'Canadian two-dollar coin ("toonie"), bimetallic.', 'Canadian $2 coin specification', 'Toonie', '28 mm in diameter.'),
+  obj('sliotar', 'Sliotar (hurling ball)', 'sliotar', 70.5, 70.5, 'diameter',
+    ball(70.5, line('M14 9Q40 35.25 14 61.5M56.5 9Q30.5 35.25 56.5 61.5', 4.2)),
+    'Hurling ball under GAA regulations.', 'GAA sliotar regulations', 'Sliotar', 'A RANGE: 69–72 mm, not including the raised rib. 70.5 mm (mid-range) is used.'),
+  obj('futsal-ball', 'Futsal ball', 'futsal ball', 200.5, 200.5, 'diameter',
+    ball(200.5, `<polygon class="d" points="100.25,70 126.4,85.1 126.4,115.4 100.25,130.5 74.1,115.4 74.1,85.1"/>` + line('M100.25 70V18M126.4 85.1L172 59M126.4 115.4L172 141.5M100.25 130.5V182M74.1 115.4L28.5 141.5M74.1 85.1L28.5 59', 3.4)),
+    'Futsal ball (size 4, low bounce).', 'FIFA Futsal Laws of the Game', 'Futsal',
+    `A RANGE: circumference 62–64 cm, i.e. about ${(620 / Math.PI).toFixed(0)}–${(640 / Math.PI).toFixed(0)} mm across. 200.5 mm (mid-range) is used. Smaller than a football.`),
+  obj('floorball', 'Floorball ball', 'floorball', 72, 72, 'diameter',
+    ball(72, [0, 1, 2, 3, 4, 5, 6, 7].map((i) => dot(36 + 21 * Math.cos((i * Math.PI) / 4), 36 + 21 * Math.sin((i * Math.PI) / 4), 4.4)).join('') + dot(36, 36, 4.4)),
+    'Floorball match ball (IFF).', 'IFF floorball rules', 'Floorball', '72 mm in diameter, with 26 holes.'),
+  obj('bandy-ball', 'Bandy ball', 'bandy ball', 62.4, 62.4, 'diameter',
+    ball(62.4, line('M2 31.2Q31.2 44 60.4 31.2', 2) + line('M2 31.2Q31.2 18.4 60.4 31.2', 2)),
+    'Bandy ball, standard size.', 'Bandy ball specification', 'Bandy', '62.4 mm in diameter (a 63.8 mm "Russian ball" also exists).'),
+  obj('takraw-ball', 'Sepak takraw ball', 'sepak takraw ball', 137, 137, 'diameter',
+    ball(137, line('M20 40L117 97M117 40L20 97M68.5 6V131', 9) + dot(68.5, 68.5, 9, 'i') + dot(40, 68.5, 7) + dot(97, 68.5, 7)),
+    'Men’s sepak takraw ball (woven synthetic).', 'ISTAF ball specification', 'Sepak_takraw',
+    `A RANGE: circumference 42–44 cm, i.e. about ${(420 / Math.PI).toFixed(0)}–${(440 / Math.PI).toFixed(0)} mm across. 137 mm (mid-range) is used.`),
+  obj('bluray-case', 'Blu-ray case', 'Blu-ray case', 135, 171.5, 'height',
+    rect(135, 171.5, 6) + cut(0, 12, 135, 13, 0) + `<circle class="ds" cx="67.5" cy="98" r="50" stroke-width="1.6"/>` + dot(67.5, 98, 8),
+    'Standard Blu-ray keep case, closed.', 'Blu-ray keep case', 'Keep_case', '171.5 × 135 × 13 mm: the same width as a DVD case but shorter. Height quoted.'),
+  obj('seven-inch-single', '7-inch vinyl single', '7-inch single', inch(7), inch(7), 'diameter',
+    ball(inch(7), ring(inch(7), 0.72, 1.6) + ring(inch(7), 0.5, 1.2) + dot(88.9, 88.9, 19)),
+    '7-inch 45 rpm vinyl single.', '7-inch single format', 'Single_(music)', 'Nominal size: 7 in (177.8 mm). Pressed records are typically a few millimetres under.'),
+  obj('duckpin-ball', 'Duckpin bowling ball', 'duckpin ball', 123.8, 123.8, 'diameter',
+    ball(123.8, line('M26 46A40 40 0 0 1 52 22', 5) + line('M70 106A46 46 0 0 0 104 76', 2.6)),
+    'Duckpin bowling ball (no finger holes).', 'Duckpin ball regulations', 'Bowling_ball',
+    `A RANGE: 4.75–5.00 in, i.e. ${inch(4.75).toFixed(1)}–${inch(5).toFixed(1)} mm. 123.8 mm (mid-range) is used. Barely more than half the width of a tenpin ball.`),
 ];

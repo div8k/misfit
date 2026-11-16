@@ -405,7 +405,8 @@ export default function App() {
                 You can change your mind until you confirm.
               </li>
               <li>
-                <strong>Fix it.</strong> Resize the real misfit until it belongs. You get to do this even if your pick was wrong.
+                <strong>Fix it.</strong> Resize the real misfit until it belongs. The game tells you whether it is too big or too small, and you
+                get to do this even if your pick was wrong.
               </li>
               <li>
                 <strong>See it.</strong> The true size slides into place over your dashed estimate.
@@ -413,7 +414,7 @@ export default function App() {
             </ol>
             <h3>Scoring</h3>
             <p>
-              Each round is worth 100: 40 for spotting the misfit and up to 60 for the repair. A repair that lands roughly within 5% of the true size
+              Each round is worth 100: 40 for spotting the misfit and up to 60 for the repair. A repair that lands roughly within 10% of the true size
               earns all 60; points fall away smoothly the further off you are, and too big counts the same as equally too small. Five rounds, 500
               points. There is no timer.
             </p>

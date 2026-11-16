@@ -83,6 +83,12 @@ export function Play({ run, scenes, act, heading, reduced }: Props) {
       ) : (
         'This one is the wrong size. The other three are to scale.'
       );
+    // A plain-language nudge so the repair is not a guess about direction.
+    sub = (
+      <>
+        {sub} <strong className="hint">{scene.distortion > 1 ? 'It is drawn too big: make it smaller.' : 'It is drawn too small: make it bigger.'}</strong>
+      </>
+    );
   } else {
     const v = verdictFor(result!.ratio);
     title = (

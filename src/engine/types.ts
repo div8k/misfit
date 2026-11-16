@@ -31,6 +31,9 @@ export interface GameObject {
   /** ISO date the source was last checked, or null if it has not been. */
   retrieved: string | null;
   notes: string;
+  /** Realistic body colour, and whether drawn details are light or dark. */
+  color: string;
+  tone: 'light' | 'dark';
   artAuthor: string;
   artLicense: string;
   status: VerificationStatus;

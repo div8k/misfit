@@ -53,7 +53,7 @@ export function Board({ scene, phase, selectedId = null, pickedId = null, t = 0,
           <>
             <svg className="draw" viewBox={`0 0 ${W} ${H}`} aria-hidden="true" focusable="false">
               <line className="shelf" x1={W * 0.05} x2={W * 0.95} y1={H * BASELINE} y2={H * BASELINE} />
-              <g className="art" transform={place(o, W, isMisfit ? misfitScale : 1).transform} dangerouslySetInnerHTML={{ __html: o.art }} />
+              <g className={`art tone-${o.tone}`} style={{ color: o.color }} transform={place(o, W, isMisfit ? misfitScale : 1).transform} dangerouslySetInnerHTML={{ __html: o.art }} />
               {phase === 'reveal' && isMisfit && (
                 <g className={`ghost ${good ? 'ghost-good' : ''}`} transform={place(o, W, estimate).transform} dangerouslySetInnerHTML={{ __html: o.art }} />
               )}

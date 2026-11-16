@@ -1,5 +1,6 @@
 import type { GameObject } from '../engine/types.ts';
 import { ball, inch, make } from './make.ts';
+import { EVERYDAY_OBJECTS } from './objects-everyday.ts';
 import { MORE_OBJECTS } from './objects-more.ts';
 
 // OBJECT CATALOGUE
@@ -297,4 +298,15 @@ const list: GameObject[] = [
   }),
 ];
 
-export const OBJECTS: Record<string, GameObject> = Object.fromEntries([...list, ...MORE_OBJECTS].map((o) => [o.id, o]));
+// Retired from play on 16 November 2026 at the owner's request: too niche for a
+// casual audience. Their entries stay in the source in case they are wanted again.
+const RETIRED = new Set([
+  'aa-battery', 'nine-volt', 'aaa-battery', 'c-battery', 'd-battery', 'squash-ball', 'racquetball', 'snooker-ball', 'carom-ball',
+  'handball', 'netball', 'minidisc', 'betamax', 'compactflash', 'laserdisc', 'ten-inch-record', 'seven-inch-single', 'sim-card',
+  'us-half-dollar', 'euro-1', 'euro-5', 'euro-10', 'euro-50', 'eu-plate', 'uk-brick', 'fifty-pence', 'sliotar', 'futsal-ball',
+  'floorball', 'bandy-ball', 'takraw-ball', 'bluray-case', 'duckpin-ball',
+]);
+
+export const OBJECTS: Record<string, GameObject> = Object.fromEntries(
+  [...list, ...MORE_OBJECTS, ...EVERYDAY_OBJECTS].filter((o) => !RETIRED.has(o.id)).map((o) => [o.id, o]),
+);

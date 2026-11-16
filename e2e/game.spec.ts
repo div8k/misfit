@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 // Edition #1: the hand-edited manifest. Round 1 is "Desk drawer"; its misfit is the SD card.
 const DAY1 = new Date('2026-11-15T12:00:00Z');
-const ROUND1 = { misfit: 'SD memory card', other: 'AA battery' };
+const ROUND1 = { misfit: 'SD memory card', other: 'US quarter' };
 const OBJECT_WORDS = ['card', 'battery', 'floppy', 'cassette', 'VHS', 'disc', 'ball', 'bill', 'passport', 'pin', 'LP', ' mm', ' cm'];
 
 // "?g=demo" selects the five hand-made scenes; without it every player gets a random game.
@@ -126,9 +126,10 @@ test('touch: a practice round can be completed by tapping @touch', async ({ page
   await open(page);
   await page.getByRole('button', { name: 'Try a practice round' }).tap();
   await expect(page.getByText("Practice — doesn't affect your daily score")).toBeVisible();
-  await cell(page, 'AA battery').tap();
+  await cell(page, 'US quarter').tap();
   await page.getByRole('button', { name: "That's the misfit" }).tap();
   await expect(page.getByText('Found it. Now fix it.')).toBeVisible();
+  await expect(page.getByText('It is drawn too big: make it smaller.')).toBeVisible();
   for (let i = 0; i < 4; i++) await page.getByRole('button', { name: 'Make it larger' }).tap();
   await expect(page.getByRole('slider')).toHaveValue('8');
   await page.getByRole('button', { name: 'Lock it in' }).tap();
@@ -292,7 +293,7 @@ test('help and settings are overlays that preserve the round; reset asks first',
 
   await page.getByRole('button', { name: 'Help' }).click();
   await expect(page.getByRole('heading', { name: 'How to play' })).toBeVisible();
-  await expect(page.getByText(/roughly within 5%/)).toBeVisible();
+  await expect(page.getByText(/roughly within 10%/)).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(cell(page, ROUND1.misfit)).toHaveAttribute('aria-pressed', 'true');
 
@@ -446,7 +447,7 @@ test('scores fall off sensibly: far-off repairs earn little, both directions', a
   await page.getByRole('slider').fill('184'); // 2.5× of an already 45%-too-big card
   await page.getByRole('button', { name: 'Lock it in' }).click();
   await expect(page.getByText(/2\d\d% too big/)).toBeVisible();
-  await expect(page.locator('.round-score strong')).toHaveText('41'); // 40 for spotting it, 1 for the repair
+  await expect(page.locator('.round-score strong')).toHaveText('46'); // 40 for spotting it, 6 for the repair
 });
 
 test('each player gets their own random game; a friend link reproduces it exactly', async ({ browser }) => {
@@ -512,7 +513,7 @@ test('number keys pick objects, the running score shows, and results include a p
   await page.keyboard.press('2');
   await expect(cell(page, 'SD memory card')).toHaveAttribute('aria-pressed', 'true');
   await page.keyboard.press('4');
-  await expect(cell(page, '9-volt battery')).toHaveAttribute('aria-pressed', 'true');
+  await expect(cell(page, 'Jenga block')).toHaveAttribute('aria-pressed', 'true');
   await page.keyboard.press('2');
   await page.getByRole('button', { name: "That's the misfit" }).click();
   await page.getByRole('slider').fill('-75');
@@ -536,7 +537,7 @@ test('practice is the teaching round once, then random and unlimited', async ({ 
     return labels;
   };
   const first = await practiceOnce();
-  expect(first).toContain('AA battery');
+  expect(first).toContain('US quarter');
   await expect(page.getByText(/Practice rounds are random and unlimited/)).toBeVisible();
   const second = await practiceOnce();
   const third = await practiceOnce();

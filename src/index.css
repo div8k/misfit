@@ -164,7 +164,7 @@ button.cell:not(.is-selected):hover { border-color: var(--ink); }
 .board-preview .cell { border: 0; background: none; border-radius: 0; }
 .cell.is-selected, .cell.is-target {
   --cell-bg: var(--blue-soft);
-  border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue); color: var(--blue);
+  border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue);
 }
 .cell.is-wrong { --cell-bg: var(--coral-soft); border-color: var(--coral); border-style: dashed; }
 
@@ -176,11 +176,13 @@ button.cell:not(.is-selected):hover { border-color: var(--ink); }
 .board-preview .draw { background: none; }
 .draw .shelf { stroke: var(--edge); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
 .draw .art { fill: currentColor; }
-.draw .d { fill: var(--cell-bg); }
-.draw .ds { fill: none; stroke: var(--cell-bg); }
+.draw .art { --detail: #FFFDF7; }
+.draw .art.tone-dark { --detail: var(--ink); }
+/* A dark outline keeps pale objects clear on the pale board. */
+.draw .art > :not(.d):not(.ds):not(.i):not([fill='none']) { stroke: var(--ink); stroke-width: 1.4px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.draw .d { fill: var(--detail); }
+.draw .ds { fill: none; stroke: var(--detail); }
 .draw .i { fill: currentColor; }
-.board-preview .draw .d { fill: var(--surface); }
-.board-preview .draw .ds { stroke: var(--surface); }
 .draw .ghost * {
   fill: none; stroke: var(--coral); stroke-width: 2px; stroke-dasharray: 5 4;
   vector-effect: non-scaling-stroke;
@@ -372,3 +374,5 @@ input[type='range']:focus-visible::-moz-range-thumb { outline: 3px solid var(--f
 
 .section { font: 700 17px/1.2 var(--display); margin-bottom: calc(-1 * var(--space-2)); }
 .running { text-align: center; font-variant-numeric: tabular-nums; }
+
+.hint { color: var(--ink); font-weight: 700; }

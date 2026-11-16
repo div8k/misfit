@@ -94,8 +94,8 @@ export function resolveScene(scene: Scene | undefined, objects: Record<string, G
   };
 }
 
-/** Distortions the generator may apply: all clearly wrong, all fixable well inside the slider. */
-export const GEN_DISTORTIONS = [0.6, 0.66, 0.72, 0.78, 1.28, 1.36, 1.45, 1.55];
+/** Distortions the generator may apply: all obviously wrong (at least a third off), all fixable well inside the slider. */
+export const GEN_DISTORTIONS = [0.52, 0.56, 0.6, 0.66, 1.5, 1.6, 1.75];
 /** Generated rounds keep true sizes within 3:1 and never shrink the whole exhibit too far. */
 const GEN_MAX_RATIO = 3;
 const GEN_MAX_EXTENT = 2.4;
