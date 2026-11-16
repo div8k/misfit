@@ -96,6 +96,22 @@ export function Gallery() {
       {(generateGame(CATALOG, `${CATALOG.epoch}:sample`) ?? []).map((s) => (
         <SceneCard key={s.id} scene={s} />
       ))}
+      <h2 className="title">All {Object.keys(CATALOG.objects).length} objects</h2>
+      <p className="sub">Each drawing on its own (not to a shared scale), for checking the artwork.</p>
+      <div className="sheet">
+        {Object.values(CATALOG.objects).map((o) => (
+          <figure key={o.id}>
+            <svg className="draw" viewBox={`${-o.widthMm * 0.06} ${-o.heightMm * 0.06} ${o.widthMm * 1.12} ${o.heightMm * 1.12}`} aria-hidden="true">
+              <g className="art" dangerouslySetInnerHTML={{ __html: o.art }} />
+            </svg>
+            <figcaption>
+              {o.label}
+              <br />
+              {formatMm(o.widthMm)} × {formatMm(o.heightMm)}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
       <p>
         <a href="./">Back to the game</a>
       </p>

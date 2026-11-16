@@ -111,18 +111,17 @@ describe('2. schedule is deterministic', () => {
   it('gives different players different games, and friends with the same seed the same game', () => {
     expect(daily(TODAY, TODAY, 'demo').generated).toBe(false);
     const games = new Set<string>();
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 2000; i++) {
       const g = daily(TODAY, TODAY, `p${i}`);
       expect(g.generated).toBe(true);
       expect(g.scenes).toHaveLength(5);
       games.add(g.scenes.map((s) => s.ref).join('|'));
-      // variety inside one game: five different misfits, no object shown more than twice
-      expect(new Set(g.scenes.map((s) => s.misfitId)).size).toBe(5);
-      const uses = new Map<string, number>();
-      for (const s of g.scenes) for (const o of s.objects) uses.set(o.id, (uses.get(o.id) ?? 0) + 1);
-      expect(Math.max(...uses.values())).toBeLessThanOrEqual(2);
+      // no object appears twice in a game: five rounds, twenty different objects
+      expect(new Set(g.scenes.flatMap((s) => s.objects.map((o) => o.id))).size).toBe(20);
     }
-    expect(games.size).toBe(200);
+    expect(games.size).toBe(2000);
+    // the hand-made demonstration set does not repeat objects either
+    expect(new Set(daily().scenes.flatMap((s) => s.objects.map((o) => o.id))).size).toBe(20);
     // same seed on a different day is a different game
     expect(daily('2026-11-16', '2026-11-16', 'p1').scenes.map((s) => s.ref)).not.toEqual(daily(TODAY, TODAY, 'p1').scenes.map((s) => s.ref));
     for (const bad of ['', 'UPPER', 'a b', '../x', 'a'.repeat(17), '<script>']) {
@@ -130,16 +129,28 @@ describe('2. schedule is deterministic', () => {
     }
   });
 
-  it('has well over 1,000 distinct valid rounds to draw from', () => {
+  it('has well over 1,000 distinct valid rounds to draw from, and uses the whole catalogue', () => {
     const ids = Object.keys(CATALOG.objects).sort();
-    let rounds = 0;
-    for (let a = 0; a < ids.length; a++)
-      for (let b = a + 1; b < ids.length; b++)
-        for (let c = b + 1; c < ids.length; c++)
-          for (let d = c + 1; d < ids.length; d++)
-            for (const m of [ids[a], ids[b], ids[c], ids[d]])
-              for (const k of GEN_DISTORTIONS) if (buildRound(CATALOG, [ids[a], ids[b], ids[c], ids[d]], m, k)) rounds++;
-    expect(rounds).toBeGreaterThan(1000);
+    expect(ids.length).toBeGreaterThanOrEqual(60);
+    // sample the space rather than enumerating all ~1.1 million rounds on every test run
+    const rand = rng('pool-sample');
+    let valid = 0;
+    for (let i = 0; i < 40000; i++) {
+      const quad = [...ids].sort(() => rand() - 0.5).slice(0, 4);
+      if (buildRound(CATALOG, quad, quad[0], GEN_DISTORTIONS[i % GEN_DISTORTIONS.length])) valid++;
+    }
+    expect(valid).toBeGreaterThan(1000);
+    // every object turns up, and gets to be the misfit, across a few thousand games
+    const seen = new Set<string>();
+    const misfits = new Set<string>();
+    for (let i = 0; i < 3000; i++) {
+      for (const s of daily(TODAY, TODAY, `c${i}`).scenes) {
+        s.objects.forEach((o) => seen.add(o.id));
+        misfits.add(s.misfitId);
+      }
+    }
+    expect(seen.size).toBe(ids.length);
+    expect(misfits.size).toBe(ids.length);
   });
 
   it('refuses dates that are invalid, before the first edition, or not yet published', () => {
@@ -379,7 +390,7 @@ describe('8. invalid content and storage problems', () => {
     // one unverified object is enough to block every scene that uses it
     const objects = { ...CATALOG.objects, cd: { ...CATALOG.objects.cd, status: 'unverified' as const, retrieved: null } };
     const issues = validateManifest(m, CATALOG.scenes, objects);
-    expect(issues.filter((i) => i.code === 'manifest.unverified')).toHaveLength(2);
+    expect(issues.filter((i) => i.code === 'manifest.unverified')).toHaveLength(1);
     expect(getDaily({ ...CATALOG, objects, manifests: [m] }, TODAY, TODAY).ok).toBe(false);
     // a "verified" claim without a check date is refused
     expect(hasErrors(validateObject({ ...CATALOG.objects.cd, retrieved: null }))).toBe(true);

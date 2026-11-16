@@ -134,26 +134,43 @@ export function buildRound(c: Catalog, ids: string[], misfitId: string, distorti
 /**
  * Five generated rounds from a seed. The same key gives the same game on every
  * device, which is what lets a friend link reproduce a player's exact rounds.
+ * No object appears twice in a game: five rounds show twenty different objects.
  */
 export function generateGame(c: Catalog, key: string): Scene[] | null {
   const rand = rng(key);
   const ids = Object.keys(c.objects).sort();
+  const size = (id: string) => largestDim(c.objects[id]);
   const rounds: Scene[] = [];
-  const usedMisfits = new Set<string>();
-  const uses = new Map<string, number>();
-  for (let attempt = 0; attempt < 600 && rounds.length < 5; attempt++) {
-    const quad = shuffle(ids, rand).slice(0, 4);
-    if (quad.length < 4 || quad.some((id) => (uses.get(id) ?? 0) >= 2)) continue;
+  const used = new Set<string>();
+  for (let attempt = 0; attempt < 400 && rounds.length < 5; attempt++) {
+    const free = shuffle(
+      ids.filter((id) => !used.has(id)),
+      rand,
+    );
+    if (free.length < 4) return null;
+    // Start from one object, then add others whose sizes keep the group within 3:1.
+    const quad = [free[0]];
+    let lo = size(free[0]);
+    let hi = lo;
+    for (const id of free.slice(1)) {
+      const d = size(id);
+      if (Math.max(hi, d) / Math.min(lo, d) > GEN_MAX_RATIO) continue;
+      quad.push(id);
+      lo = Math.min(lo, d);
+      hi = Math.max(hi, d);
+      if (quad.length === 4) break;
+    }
+    if (quad.length < 4) continue;
+    const order = shuffle(quad, rand);
     const options = shuffle(
-      quad.filter((id) => !usedMisfits.has(id)).flatMap((id) => GEN_DISTORTIONS.map((d) => ({ id, d }))),
+      order.flatMap((id) => GEN_DISTORTIONS.map((d) => ({ id, d }))),
       rand,
     );
     for (const { id, d } of options) {
-      const scene = buildRound(c, quad, id, d, rounds.length + 1);
+      const scene = buildRound(c, order, id, d, rounds.length + 1);
       if (!scene) continue;
       rounds.push(scene);
-      usedMisfits.add(id);
-      for (const q of quad) uses.set(q, (uses.get(q) ?? 0) + 1);
+      for (const q of order) used.add(q);
       break;
     }
   }

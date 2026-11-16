@@ -1,6 +1,7 @@
 import type { DailyManifest, Scene } from '../engine/types.ts';
 
 // Five handcrafted demonstration scenes plus one tutorial scene.
+// No object appears in more than one of the five demonstration scenes.
 // `distortion` is displayed size ÷ true size of the misfit.
 // `layout.extentMm` is the shared scale: the width, in millimetres, that every
 // cell of the scene represents. The validator checks it is large enough for the
@@ -24,12 +25,12 @@ const list: Scene[] = [
     id: 'desk-drawer',
     version: 1,
     title: 'Desk drawer',
-    objectIds: ['credit-card', 'sd-card', 'aa-battery', 'nine-volt'],
+    objectIds: ['compactflash', 'sd-card', 'aa-battery', 'nine-volt'],
     misfitId: 'sd-card',
     distortion: 1.45,
     layout: { extentMm: 162 },
     difficulty: 'easy',
-    explanation: 'A full-size SD card is only 32 mm tall, far shorter than either battery. It was drawn 45% too large, nearly the height of the 9-volt.',
+    explanation: 'A full-size SD card is only 32 mm tall, far shorter than either battery and smaller than a CompactFlash card. It was drawn 45% too large, nearly the height of the 9-volt.',
   },
   {
     id: 'media-shelf',
@@ -46,7 +47,7 @@ const list: Scene[] = [
     id: 'wallet',
     version: 1,
     title: 'Travel wallet',
-    objectIds: ['dollar-bill', 'credit-card', 'passport', 'cd'],
+    objectIds: ['dollar-bill', 'credit-card', 'passport', 'euro-10'],
     misfitId: 'credit-card',
     distortion: 0.7,
     layout: { extentMm: 175 },

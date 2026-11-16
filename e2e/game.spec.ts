@@ -500,6 +500,7 @@ for (const seed of ['r1', 'r2', 'r3', 'r4', 'r5', 'r6']) {
       await page.getByRole('button', { name: /Next round|See my score/ }).click();
     }
     expect(seen.size).toBe(5); // five different exhibits
+    expect(new Set([...seen].flatMap((x) => x.split('|'))).size).toBe(20); // and no object repeats
     await expect(page.getByRole('heading', { name: 'Your eye for size' })).toBeVisible();
     await expect(page.getByText(/^\d\/5 spotted · \d{1,3}\/500 points$/)).toBeVisible();
   });
