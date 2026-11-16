@@ -1,6 +1,7 @@
 import type { GameObject } from '../engine/types.ts';
 import { ball, inch, make } from './make.ts';
 import { EVERYDAY_OBJECTS } from './objects-everyday.ts';
+import { EXTRA_OBJECTS } from './objects-extra.ts';
 import { MORE_OBJECTS } from './objects-more.ts';
 
 // OBJECT CATALOGUE
@@ -301,12 +302,11 @@ const list: GameObject[] = [
 // Retired from play on 16 November 2026 at the owner's request: too niche for a
 // casual audience. Their entries stay in the source in case they are wanted again.
 const RETIRED = new Set([
-  'aa-battery', 'nine-volt', 'aaa-battery', 'c-battery', 'd-battery', 'squash-ball', 'racquetball', 'snooker-ball', 'carom-ball',
-  'handball', 'netball', 'minidisc', 'betamax', 'compactflash', 'laserdisc', 'ten-inch-record', 'seven-inch-single', 'sim-card',
-  'us-half-dollar', 'euro-1', 'euro-5', 'euro-10', 'euro-50', 'eu-plate', 'uk-brick', 'fifty-pence', 'sliotar', 'futsal-ball',
-  'floorball', 'bandy-ball', 'takraw-ball', 'bluray-case', 'duckpin-ball',
+  'aa-battery', 'nine-volt', 'aaa-battery', 'c-battery', 'd-battery', 'racquetball', 'carom-ball',
+  'minidisc', 'betamax', 'compactflash', 'laserdisc', 'ten-inch-record', 'sim-card',
+  'fifty-pence', 'sliotar', 'futsal-ball', 'floorball', 'bandy-ball', 'takraw-ball', 'duckpin-ball',
 ]);
 
 export const OBJECTS: Record<string, GameObject> = Object.fromEntries(
-  [...list, ...MORE_OBJECTS, ...EVERYDAY_OBJECTS].filter((o) => !RETIRED.has(o.id)).map((o) => [o.id, o]),
+  [...list, ...MORE_OBJECTS, ...EVERYDAY_OBJECTS, ...EXTRA_OBJECTS].filter((o) => !RETIRED.has(o.id)).map((o) => [o.id, o]),
 );

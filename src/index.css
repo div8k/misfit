@@ -178,6 +178,11 @@ button.cell:not(.is-selected):hover { border-color: var(--ink); }
 .draw .art { fill: currentColor; }
 .draw .art { --detail: #FFFDF7; }
 .draw .art.tone-dark { --detail: var(--ink); }
+/* Shading: the mask repaints the object's own shape in white so the gradient is clipped to it. */
+.draw .mask-art * { fill: #fff !important; stroke: none !important; }
+.draw .mask-art .ds, .draw .mask-art [fill='none'] { fill: none !important; stroke: #fff !important; }
+.draw .shade { pointer-events: none; }
+.draw .ground { fill: var(--ink); opacity: 0.2; }
 /* A dark outline keeps pale objects clear on the pale board. */
 .draw .art > :not(.d):not(.ds):not(.i):not([fill='none']) { stroke: var(--ink); stroke-width: 1.4px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
 .draw .d { fill: var(--detail); }

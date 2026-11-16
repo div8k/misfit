@@ -16,4 +16,21 @@ export const COLORS: Record<string, [string, 'light' | 'dark']> = {
   'ipad-10': ['#C9CED6', 'dark'], 'game-boy': ['#C9C7BD', 'dark'], 'switch-2': ['#E4483B', 'dark'], 'xbox-controller': ['#F2F2F2', 'dark'],
   'magic-mouse': ['#FFFFFF', 'dark'], crayon: ['#E53935', 'light'], 'jenga-block': ['#D9B382', 'dark'], 'post-it': ['#F7E36B', 'dark'],
   'stop-sign': ['#C62828', 'light'],
+  // brought back into play
+  'euro-1': ['#C9CCD2', 'dark'], 'euro-5': ['#9AA5A0', 'light'], 'euro-10': ['#D97A7A', 'light'], 'euro-50': ['#E39A4A', 'light'],
+  'us-half-dollar': ['#C0C4CC', 'dark'], 'uk-brick': ['#B5533C', 'light'], 'eu-plate': ['#FFFFFF', 'dark'], 'bluray-case': ['#2F6DB5', 'light'],
+  'seven-inch-single': ['#1C1C1E', 'light'], handball: ['#F2F2F2', 'dark'], netball: ['#FFFFFF', 'dark'], 'snooker-ball': ['#C62828', 'light'],
+  'squash-ball': ['#1D1D1F', 'light'],
+  // fourth batch
+  airtag: ['#FFFFFF', 'dark'], 'cad-5-note': ['#4F86C6', 'light'], 'cad-dime': ['#C6CAD1', 'dark'], 'cad-nickel': ['#BFC3C9', 'dark'],
+  'cad-quarter': ['#C0C4CC', 'dark'], 'us-dollar-coin': ['#C9A44C', 'dark'], gba: ['#6C5FC7', 'dark'], 'homepod-mini': ['#2E3238', 'light'],
+  'iphone-se': ['#C9CED6', 'dark'], 'iphone-16-pm': ['#A39E96', 'dark'], psp: ['#7A808A', 'dark'], 'ps-vita': ['#6B7078', 'dark'],
+  'steam-deck': ['#7A808A', 'dark'], 'xbox-series-x': ['#2A2D33', 'light'], 'xbox-series-s': ['#F2F2F2', 'dark'], 'magic-keyboard': ['#C9CED6', 'light'],
+  'ipad-mini': ['#C9CED6', 'dark'], 'ipad-pro-13': ['#8E9299', 'dark'], 'switch-1': ['#3FA7E0', 'dark'], 'nintendo-3ds': ['#2E7BD6', 'light'],
+  'ds-lite': ['#FFFFFF', 'dark'], ps5: ['#FFFFFF', 'dark'], 'gamecube-controller': ['#6C5FC7', 'light'], dualshock: ['#8A9099', 'dark'],
+  'airpods-case': ['#FFFFFF', 'dark'], 'a3-sheet': ['#FFFFFF', 'dark'], 'dl-envelope': ['#F4EFE2', 'dark'], 'c5-envelope': ['#C9A26B', 'dark'],
+  barbie: ['#E85D9E', 'light'], 'rubiks-cube': ['#F2C200', 'dark'], 'basketball-hoop': ['#E0562A', 'light'], 'oil-drum': ['#2F6DB5', 'light'],
+  keg: ['#B8BEC9', 'dark'], 'american-football': ['#7B4A2B', 'light'], 'rugby-ball': ['#FFFFFF', 'dark'], 'mac-mini': ['#C9CED6', 'dark'],
+  pallet: ['#C9A26B', 'dark'], 'world-cup-trophy': ['#D4AF37', 'dark'], 'stanley-cup': ['#C9CED6', 'dark'], 'lombardi-trophy': ['#C9CED6', 'dark'],
+  microsd: ['#1D1D1F', 'light'], 'photo-8r': ['#FFFFFF', 'dark'], 'playing-card': ['#FFFFFF', 'dark'],
 };
