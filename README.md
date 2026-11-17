@@ -80,6 +80,11 @@ scripts/        Content validator CLI
 - **Opening screen.** Arriving at the start page shows a large MISFIT wordmark, the rule "Three are to scale. One isn't.", a sample exhibit and "Tap to begin"; the wordmark then shrinks into the corner. A game in progress skips it.
 - **The rule is hard to miss.** "Three are to scale" (green) and "One isn't" (red) now appear as two bold pills above every identify round, and the start page lists the three steps.
 
+### A handheld-console look (17 November 2026)
+
+- **Fonts.** The original Bricolage Grotesque and DM Sans were replaced with two pixel fonts: Press Start 2P for the logo and the big score, and Jersey 15 for all other text. Both are self-hosted and under the SIL Open Font License (texts in `licenses/`). Small text was enlarged because Jersey 15 runs small, and fake bold is switched off so the pixels stay crisp.
+- **Picking an object** now lifts it off the board with a hard, blocky drop shadow; buttons have a matching pressed-key shadow.
+
 ## Small things that came from the research
 
 - **Unlimited practice.** The first practice is the fixed teaching round; every one after that is a fresh random round. Practice never touches the daily score or streak.
@@ -190,7 +195,7 @@ Content checklist per scene: Is every object a standard or a named model, not a 
 
 - Game code and all object artwork, the mascot and the score card were written for this project. No code, art, copy, layout or question sets were taken from other games. The idea of estimating scale, and of spotting a wrongly scaled object, is not original to this project and is not claimed to be.
 - Dependencies (not original, used under their own licences): React and React DOM (MIT), Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT), Playwright (Apache-2.0).
-- Fonts, self-hosted via the Fontsource packages: **Bricolage Grotesque** and **DM Sans**, both under the SIL Open Font License 1.1, which permits embedding and bundling. Licence texts are in `licenses/`. If the font files fail to load, the CSS falls back to Arial and the system UI font.
+- Fonts, self-hosted via the Fontsource packages: **Press Start 2P** and **Jersey 15**, both under the SIL Open Font License 1.1, which permits embedding and bundling. Licence texts are in `licenses/`. If the font files fail to load, the CSS falls back to Courier New.
 - Object names such as "VHS" or "SD" are used descriptively to identify standardised formats; no logos are drawn.
 
 ## Later, not now

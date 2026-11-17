@@ -13,8 +13,9 @@ export interface CardData {
 }
 
 const C = { paper: '#F7F3E8', surface: '#FFFDF7', ink: '#202322', muted: '#5C625D', line: '#D6D0C3', blue: '#234BE0' };
-const DISPLAY = '"Bricolage Grotesque Variable", Arial, sans-serif';
-const BODY = '"DM Sans Variable", system-ui, sans-serif';
+const LOGO = '"Press Start 2P", "Courier New", monospace';
+const DISPLAY = '"Jersey 15", "Courier New", monospace';
+const BODY = '"Jersey 15", "Courier New", monospace';
 const BAND_FILL = [C.blue, '#216548', '#8A6A00', C.line];
 
 /**
@@ -30,7 +31,7 @@ export async function drawScoreCard(d: CardData): Promise<Blob> {
   const g = canvas.getContext('2d');
   if (!g) throw new Error('Canvas is unavailable');
   try {
-    await Promise.all([document.fonts.load(`800 100px ${DISPLAY}`), document.fonts.load(`600 40px ${BODY}`)]);
+    await Promise.all([document.fonts.load(`400 100px ${LOGO}`), document.fonts.load(`700 100px ${DISPLAY}`), document.fonts.load(`600 40px ${BODY}`)]);
   } catch {
     /* fall back to system fonts */
   }
@@ -47,8 +48,8 @@ export async function drawScoreCard(d: CardData): Promise<Blob> {
 
   g.textBaseline = 'alphabetic';
   g.fillStyle = C.ink;
-  g.font = `800 112px ${DISPLAY}`;
-  g.fillText('MISFIT', 130, 240);
+  g.font = `400 78px ${LOGO}`;
+  g.fillText('MISFIT', 130, 250);
   g.font = `600 40px ${BODY}`;
   g.fillStyle = C.muted;
   g.textAlign = 'right';
@@ -57,7 +58,7 @@ export async function drawScoreCard(d: CardData): Promise<Blob> {
   g.textAlign = 'left';
 
   g.fillStyle = C.blue;
-  g.font = `800 300px ${DISPLAY}`;
+  g.font = `700 300px ${DISPLAY}`;
   const scoreText = String(d.score);
   g.fillText(scoreText, 120, 640);
   const sw = g.measureText(scoreText).width;
@@ -98,7 +99,7 @@ export async function drawScoreCard(d: CardData): Promise<Blob> {
   });
 
   g.fillStyle = C.ink;
-  g.font = `700 60px ${DISPLAY}`;
+  g.font = `700 54px ${DISPLAY}`;
   g.fillText(TAGLINE, 130, 1160);
   g.fillStyle = C.muted;
   g.font = `500 38px ${BODY}`;

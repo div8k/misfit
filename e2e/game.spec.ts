@@ -78,6 +78,9 @@ test('mouse: a wrong pick still leads to repairing the real misfit, and double c
   await cell(page, ROUND1.misfit).click();
   await cell(page, ROUND1.other).click();
   await expect(cell(page, ROUND1.other)).toHaveAttribute('aria-pressed', 'true');
+  // the chosen object lifts and casts a shadow; the others do not
+  await expect.poll(() => cell(page, ROUND1.other).evaluate((e) => getComputedStyle(e).boxShadow.split('rgb').length - 1)).toBe(2);
+  await expect.poll(() => cell(page, ROUND1.misfit).evaluate((e) => getComputedStyle(e).boxShadow)).toBe('none'); // fades out
   await expect(cell(page, ROUND1.misfit)).toHaveAttribute('aria-pressed', 'false');
   await page.getByRole('button', { name: "That's the misfit" }).dblclick();
 
@@ -377,7 +380,7 @@ for (const [width, height] of [
     );
     for (const s of scales) expect(s).toBeCloseTo(scales[0], 4);
     const labelSize = await page.locator('.label').first().evaluate((e) => getComputedStyle(e).fontSize);
-    expect(labelSize).toBe('13px');
+    expect(labelSize).toBe('16px');
     if (width === 390) {
       // the first interaction is visible without scrolling on a typical phone
       const cta = await page.locator('.controls .btn-primary').boundingBox();
@@ -559,7 +562,9 @@ test('opening screen states the rule, then hands over to the start page', async 
   await expect(page.locator('.splash-mark')).toBeVisible();
   await expect(page.locator('.splash')).toContainText("Three are to scale. One isn't.");
   const size = await page.locator('.splash-mark').evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
-  expect(size).toBeGreaterThanOrEqual(76); // much bigger than the 28–32px corner wordmark
+  expect(size).toBeGreaterThanOrEqual(60); // much bigger than the 20–24px corner wordmark
+  expect(await page.locator('.splash-mark').evaluate((e) => getComputedStyle(e).fontFamily)).toContain('Press Start 2P');
+  expect(await page.evaluate(() => document.fonts.check('16px "Jersey 15"') && document.fonts.check('16px "Press Start 2P"'))).toBe(true);
   // the wordmark stays on one line and inside its column at every width
   for (const width of [320, 390, 768, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
