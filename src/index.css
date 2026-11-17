@@ -391,7 +391,8 @@ input[type='range']:focus-visible::-moz-range-thumb { outline: 3px solid var(--f
 }
 .splash.is-leaving { opacity: 0; transform: scale(0.2); pointer-events: none; }
 .splash-inner { width: min(100%, 460px); display: grid; gap: var(--space-4); justify-items: center; text-align: center; }
-.splash-mark { font: 800 clamp(76px, 24vw, 150px)/0.9 var(--display); letter-spacing: -0.055em; color: var(--ink); }
+/* One line, always: the size is capped so all six letters fit the 460px column. */
+.splash-mark { font: 800 clamp(64px, 21vw, 124px)/0.9 var(--display); letter-spacing: -0.055em; color: var(--ink); white-space: nowrap; }
 .splash-sub { font-size: 18px; font-weight: 600; color: var(--muted); }
 .splash .teaser { width: 100%; }
 .splash-go { min-height: 60px; font-size: 18px; }

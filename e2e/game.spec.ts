@@ -560,6 +560,18 @@ test('opening screen states the rule, then hands over to the start page', async 
   await expect(page.locator('.splash')).toContainText("Three are to scale. One isn't.");
   const size = await page.locator('.splash-mark').evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
   expect(size).toBeGreaterThanOrEqual(76); // much bigger than the 28–32px corner wordmark
+  // the wordmark stays on one line and inside its column at every width
+  for (const width of [320, 390, 768, 1024, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 900 });
+    const m = await page.locator('.splash-mark').evaluate((e) => {
+      const r = e.getBoundingClientRect();
+      const col = e.parentElement!.getBoundingClientRect();
+      return { lines: r.height / parseFloat(getComputedStyle(e).fontSize), fits: e.scrollWidth <= col.width + 1 };
+    });
+    expect(m.lines, `one line at ${width}px`).toBeLessThan(1.3);
+    expect(m.fits, `fits at ${width}px`).toBe(true);
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
   await expect(page.getByRole('button', { name: "Play today's Misfit" })).toHaveCount(0);
   await page.keyboard.press('Enter'); // the begin button has focus
   await expect(page.locator('.splash')).toHaveCount(0);
